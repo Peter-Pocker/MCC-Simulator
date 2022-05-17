@@ -37,17 +37,19 @@
 #include <cassert>
 #include <limits>
 
-#include "globals.hpp"
-#include "random_utils.hpp"
-#include "vc.hpp"
-#include "routefunc.hpp"
-#include "outputset.hpp"
-#include "buffer.hpp"
-#include "buffer_state.hpp"
-#include "roundrobin_arb.hpp"
-#include "allocator.hpp"
-#include "switch_monitor.hpp"
-#include "buffer_monitor.hpp"
+#include "../globals.hpp"
+#include "../random_utils.hpp"
+#include "../vc.hpp"
+#include "../routefunc.hpp"
+#include "../outputset.hpp"
+#include "../buffer.hpp"
+#include "../buffer_state.hpp"
+#include "../arbiters/roundrobin_arb.hpp"
+#include "../allocators/allocator.hpp"
+#include "../power/switch_monitor.hpp"
+#include "../power/buffer_monitor.hpp"
+#include "../flitchannel.hpp"
+#include "../routers/router.hpp"
 
 
 int print_flit = -1;

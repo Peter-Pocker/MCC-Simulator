@@ -34,7 +34,7 @@
  *
  *
  */
-#include <sys/time.h>
+#include <time.h>
 
 #include <string>
 #include <cstdlib>
@@ -50,9 +50,9 @@
 #include "booksim_config.hpp"
 #include "trafficmanager.hpp"
 #include "random_utils.hpp"
-#include "network.hpp"
+#include "networks/network.hpp"
 #include "injection.hpp"
-#include "power_module.hpp"
+#include "power/power_module.hpp"
 
 
 
@@ -162,16 +162,18 @@ bool Simulate( BookSimConfig const & config )
    */
 
   double total_time; /* Amount of time we've run */
-  struct timeval start_time, end_time; /* Time before/after user code */
-  total_time = 0.0;
-  gettimeofday(&start_time, NULL);
+  // struct timeval start_time, end_time; /* Time before/after user code */
+  // total_time = 0.0;
+   //gettimeofday(&start_time, NULL);
 
-  bool result = trafficManager->Run() ;
+  time_t start;
+  time_t end;
+  time(&start);
 
 
-  gettimeofday(&end_time, NULL);
-  total_time = ((double)(end_time.tv_sec) + (double)(end_time.tv_usec)/1000000.0)
-            - ((double)(start_time.tv_sec) + (double)(start_time.tv_usec)/1000000.0);
+  bool result = trafficManager->Run();
+  time(&end);
+  total_time = end - start;
 
   cout<<"Total run time "<<total_time<<endl;
 

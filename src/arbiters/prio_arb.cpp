@@ -25,10 +25,12 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "booksim.hpp"
+#include "../booksim.hpp"
 #include <cassert>
 
 #include "prio_arb.hpp"
+#include "../module.hpp"
+#include "../config_utils.hpp"
 
 
 PriorityArbiter::PriorityArbiter( const Configuration &config,

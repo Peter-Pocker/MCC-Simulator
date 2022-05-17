@@ -30,10 +30,22 @@
 #include <iostream>
 #include <cstdlib>
 #include <cassert>
+#include <queue>
+#include <vector>
+#include <list>
 
 #include "event_router.hpp"
-#include "stats.hpp"
-#include "globals.hpp"
+#include "../stats.hpp"
+#include "../globals.hpp"
+#include "../module.hpp"
+#include "router.hpp"
+#include "../buffer.hpp"
+#include "../vc.hpp"
+#include "../arbiters/prio_arb.hpp"
+#include "../routefunc.hpp"
+#include "../outputset.hpp"
+#include "../pipefifo.hpp"
+#include "../credit.hpp"
 
 EventRouter::EventRouter( const Configuration& config,
 		    Module *parent, const string & name, int id,

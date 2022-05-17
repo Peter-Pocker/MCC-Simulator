@@ -33,6 +33,7 @@
 #include "config_utils.hpp"
 #include "stats.hpp"
 #include "trafficmanager.hpp"
+#include "networks/network.hpp"
 
 class BatchTrafficManager : public TrafficManager {
 

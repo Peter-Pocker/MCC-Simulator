@@ -48,12 +48,12 @@ BookSimConfig::BookSimConfig( )
   _int_map["subnets"] = 1;
 
   //==== Topology options =======================
-  AddStrField( "topology", "torus" );
+  AddStrField( "topology", "mesh" );
   _int_map["k"] = 8; //network radix
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 2; // Bransan number of wireless routers
-  AddStrField( "routing_function", "none" );
+  AddStrField( "routing_function", "dor" );
 
   //simulator tries to correclty adjust latency for node/router placement 
   _int_map["use_noc_latency"] = 1;

@@ -37,7 +37,7 @@
 
 
 #include "router.hpp"
-#include "routefunc.hpp"
+#include "../routefunc.hpp"
 
 using namespace std;
 

@@ -31,13 +31,13 @@
 #include <string>
 #include <vector>
 
-#include "timed_module.hpp"
-#include "flit.hpp"
-#include "credit.hpp"
-#include "flitchannel.hpp"
-#include "payloadchannel.hpp"
-#include "channel.hpp"
-#include "config_utils.hpp"
+#include "../timed_module.hpp"
+#include "../flit.hpp"
+#include "../credit.hpp"
+#include "../flitchannel.hpp"
+#include "../payloadchannel.hpp"
+#include "../channel.hpp"
+#include "../config_utils.hpp"
 
 typedef Channel<Credit> CreditChannel;
 

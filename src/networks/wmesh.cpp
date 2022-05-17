@@ -31,14 +31,14 @@
  *
  */
 
-#include "booksim.hpp"
+#include "../booksim.hpp"
 #include <vector>
 #include <sstream>
 #include <ctime>
 #include <cassert>
 #include "wmesh.hpp"
-#include "random_utils.hpp"
-#include "misc_utils.hpp"
+#include "../random_utils.hpp"
+#include "../misc_utils.hpp"
 #include <map>
 #include <algorithm>
 #include <math.h>

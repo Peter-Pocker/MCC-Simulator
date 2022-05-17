@@ -33,7 +33,10 @@
 #include <map>
 #include <list>
 #include <utility>
-#include <flit.hpp>
+
+#include "flit.hpp"
+
+
 /*all declared in main.cpp*/
 
 int GetSimTime();

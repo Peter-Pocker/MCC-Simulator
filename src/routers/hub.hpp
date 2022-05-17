@@ -35,7 +35,7 @@
 #include <map>
 
 #include "router.hpp"
-#include "routefunc.hpp"
+#include "../routefunc.hpp"
 #include "iq_router.hpp"
 
 using namespace std;
