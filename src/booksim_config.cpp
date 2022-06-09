@@ -165,11 +165,11 @@ BookSimConfig::BookSimConfig( )
   _int_map["perm_seed"] = 0; // seed value for random permuation trafficpattern generator
   AddStrField("perm_seed", ""); // workaround to allow special "time" value
 
-  _float_map["injection_rate"]       = 0.1;
+  _float_map["injection_rate"]       = 0.01;
   AddStrField("injection_rate", ""); // workaraound to allow for vector specification
   
   //bransan added
-  _float_map["mcast_injection_rate"]       = 0.1;
+  _float_map["mcast_injection_rate"]       = 1;
   AddStrField("mcast_injection_rate", ""); 
 
   //bransan added
@@ -181,7 +181,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("mcast_switch", ""); 
 
   //bransan added
-  _int_map["num_mcast_dests"]       = 8;
+  _int_map["num_mcast_dests"]       = 2;
   AddStrField("num_mcast_dests", ""); 
 
   _int_map["injection_rate_uses_flits"] = 0;

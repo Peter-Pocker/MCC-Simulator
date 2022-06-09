@@ -1165,7 +1165,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
                    << " at time " << timer
                    << "." << endl;
     }
-
+     mcast_flag = ((float)rand()/RAND_MAX) < _mcast_load;
     vector<int> temp;
     for (int i = 0; i < size; ++i)
     {
@@ -1233,12 +1233,12 @@ void TrafficManager::_GeneratePacket(int source, int stype,
 
         // bool mcast_flag = false;
         // srand(GetSimTime()+source);
-        // mcast_flag = ((float)rand()/RAND_MAX) < _mcast_load;
+        
 
         //Flag used to inject multicast packet only at periodic intervals
 
         if(_mcast_switch) {
-            bool mcast_time_flag = (GetSimTime() % _mcast_inject_time) == 0; 
+            bool mcast_time_flag = 1;//(GetSimTime() % _mcast_inject_time) == 0; 
             if(mcast_flag && mcast_time_flag)
             {   
                 // cout<<"simtime : "<<GetSimTime()<<endl;
@@ -1259,14 +1259,14 @@ void TrafficManager::_GeneratePacket(int source, int stype,
                     f_diff[f->id] = 0;
                     mcast_flag = false; 
                 }
-                // if(f->head)
-                // {
-                //     cout<<"\n\nPid "<<f->pid<<" Destinations are: "<<endl;
-                //     for(int i = 0; i < f->mdest.first.size() ; i++){
-                //         cout<<f->mdest.first[i]<<" ";
-                //     }
-                //     cout<<"num dests "<<f->mdest.first.size()<<" simtime "<<GetSimTime()<<" source " << source<<endl;
-                // }
+                 if(f->head)
+                 {
+                     cout<<"\n\nPid "<<f->pid<<" Destinations are: "<<endl;
+                     for(int i = 0; i < f->mdest.first.size() ; i++){
+                         cout<<f->mdest.first[i]<<" ";
+                     }
+                     cout<<"num dests "<<f->mdest.first.size()<<" simtime "<<GetSimTime()<<" source " << source<<endl;
+                }
             }
         }
         
