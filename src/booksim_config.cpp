@@ -169,7 +169,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("injection_rate", ""); // workaraound to allow for vector specification
   
   //bransan added
-  _float_map["mcast_injection_rate"]       = 0;
+  _float_map["mcast_injection_rate"]       = 0.001;
   AddStrField("mcast_injection_rate", ""); 
 
   //bransan added

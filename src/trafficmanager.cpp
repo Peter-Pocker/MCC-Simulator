@@ -1408,7 +1408,7 @@ void TrafficManager::_Step()
 
         _net[subnet]->ReadInputs();
     }
-
+  //  cout << "finish=" << finish << "\n";
     if (!_empty_network)
     {
         _Inject();
@@ -1917,7 +1917,7 @@ void TrafficManager::_DisplayRemaining(ostream &os) const
 bool TrafficManager::_SingleSim()
 {
     int converged = 0;
-
+    finish = false;
     //once warmed up, we require 3 converging runs to end the simulation
     vector<double> prev_latency(_classes, 0.0);
     vector<double> prev_accepted(_classes, 0.0);
@@ -2087,6 +2087,7 @@ bool TrafficManager::_SingleSim()
             while (_PacketsOutstanding())
             {
                 // cout<<"calling extra steps"<<endl;
+               // cout << "_PacketsOutstanding =" << _PacketsOutstanding()<<"\n";
                 _Step();
 
                 ++empty_steps;
