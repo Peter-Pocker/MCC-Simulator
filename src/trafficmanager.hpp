@@ -60,6 +60,8 @@ protected:
   int _nodes;
   int _routers;
   int _vcs;
+  // STS add
+  bool finish;
   //Bransan added num of hubs
   int _nhubs;
 

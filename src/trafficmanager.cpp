@@ -915,7 +915,7 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
 
             // Only record statistics once per packet (at tail)
             // and based on the simulation state
-            if ((_sim_state == warming_up) || f->record)
+            if ( f->record)
             {
 
                 _hop_stats[f->cl]->AddSample(f->hops);
@@ -1149,7 +1149,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
         Error(err.str());
     }
 
-    if ((_sim_state == running) ||
+    if (!finish ||
         ((_sim_state == draining) && (timer < _drain_time)))
     {
         record = _measure_stats[cl];
@@ -1377,7 +1377,7 @@ void TrafficManager::_Step()
                                << "." << endl;
                 }
                 flits[subnet].insert(make_pair(n, f));
-                if ((_sim_state == warming_up) || (_sim_state == running))
+                if (!finish)
                 {
                     ++_accepted_flits[f->cl][n];
                     if (f->tail)
@@ -1673,7 +1673,7 @@ void TrafficManager::_Step()
                     nf->vc = f->vc;
                 }
 
-                if ((_sim_state == warming_up) || (_sim_state == running))
+                if (!finish)
                 {
                     ++_sent_flits[c][n];
                     if (f->head)
@@ -1923,21 +1923,23 @@ bool TrafficManager::_SingleSim()
     vector<double> prev_accepted(_classes, 0.0);
     bool clear_last = false;
     int total_phases = 0;
-    while ((total_phases < _max_samples) &&
-           ((_sim_state != running) ||
-            (converged < 3)))
+    while (!finish)
     {
-
+        /*
         if (clear_last || (((_sim_state == warming_up) && ((total_phases % 2) == 0))))
         {
             clear_last = false;
             _ClearStats();
         }
-
+        */
         for (int iter = 0; iter < _sample_period; ++iter)
         {
             // cout<<"step number "<<iter<<endl;
             _Step();
+            if (_time = 10000)
+            {
+                finish = true;
+            }
         }
         // cout <<"after step" <<_time<< endl;
 
@@ -1992,6 +1994,7 @@ bool TrafficManager::_SingleSim()
             }
 
             cout << "latency change    = " << latency_change << endl;
+            /*
             if (lat_chg_exc_class < 0)
             {
                 if ((_sim_state == warming_up) &&
@@ -2024,9 +2027,11 @@ bool TrafficManager::_SingleSim()
                     acc_chg_exc_class = c;
                 }
             }
+            */
         }
-
+        
         // Fail safe for latency mode, throughput will ust continue
+        /*
         if (_measure_latency && (lat_exc_class >= 0))
         {
 
@@ -2065,11 +2070,12 @@ bool TrafficManager::_SingleSim()
             }
         }
         ++total_phases;
+        */
     }
 
-    if (_sim_state == running)
+    if (finish)
     {
-        ++converged;
+ //       ++converged;
         // cout<<"CONVERGED "<<_measure_latency<<endl;
         _sim_state = draining;
         _drain_time = _time;
@@ -2119,7 +2125,7 @@ bool TrafficManager::_SingleSim()
                             break;
                         }
                     }
-
+                    /*
                     if (lat_exc_class >= 0)
                     {
                         cout << "Average latency for class " << lat_exc_class << " exceeded " << _latency_thres[lat_exc_class] << " cycles. Aborting simulation." << endl;
@@ -2131,7 +2137,7 @@ bool TrafficManager::_SingleSim()
                         }
                         break;
                     }
-
+                    */
                     _DisplayRemaining();
                 }
             }
@@ -2142,7 +2148,7 @@ bool TrafficManager::_SingleSim()
         cout << "Too many sample periods needed to converge" << endl;
     }
 
-    return (converged > 0);
+    return true;
 }
 
 bool TrafficManager::Run()
