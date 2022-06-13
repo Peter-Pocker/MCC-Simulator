@@ -822,6 +822,14 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
                    << ", hops = " << f->hops
                    << ", flat = " << f->atime - f->itime
                    << ")." << endl;
+        if ( f->watch)
+        {
+            cout  << " multi Destinations are: ";
+            for (int i = 0; i < f->mdest.first.size(); i++) {
+                cout << f->mdest.first[i] << " " << endl;
+            }
+            cout << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << f->src << endl;
+        }
     }
 
     if (!f->dropped)
@@ -831,7 +839,6 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
         {
             ostringstream err;
             cout<<f->dest <<endl;
-            
             err << "Flit " << f->id << " arrived at incorrect output " << dest;
             Error(err.str());
         }
@@ -1241,7 +1248,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
         //Flag used to inject multicast packet only at periodic intervals
 
         if(_mcast_switch) {
-            bool mcast_time_flag = 1;//(GetSimTime() % _mcast_inject_time) == 0; 
+            bool mcast_time_flag = (GetSimTime() % _mcast_inject_time) == 0; //1;//
             if(mcast_flag && mcast_time_flag)
             {   
                 // cout<<"simtime : "<<GetSimTime()<<endl;
@@ -1697,7 +1704,7 @@ void TrafficManager::_Step()
     for (int subnet = 0; subnet < _subnets; ++subnet)
     {
         for (int n = 0; n < _nodes; ++n)
-        {
+        {  
             map<int, Flit *>::const_iterator iter = flits[subnet].find(n);
             if (iter != flits[subnet].end())
             {
@@ -1721,6 +1728,7 @@ void TrafficManager::_Step()
 #endif
 
                 _RetireFlit(f, n);
+            
             }
         }
         for (int m = 0; m < _nhubs; m++)

@@ -48,7 +48,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["subnets"] = 1;
 
   //==== Topology options =======================
-  AddStrField( "topology", "wmesh" );
+  AddStrField( "topology", "mesh" );
   _int_map["k"] = 8; //network radix
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
@@ -165,11 +165,11 @@ BookSimConfig::BookSimConfig( )
   _int_map["perm_seed"] = 0; // seed value for random permuation trafficpattern generator
   AddStrField("perm_seed", ""); // workaround to allow special "time" value
 
-  _float_map["injection_rate"]       = 0.01;
+  _float_map["injection_rate"]       = 0.2;
   AddStrField("injection_rate", ""); // workaraound to allow for vector specification
   
   //bransan added
-  _float_map["mcast_injection_rate"]       = 0.01;
+  _float_map["mcast_injection_rate"]       = 0.1;
   AddStrField("mcast_injection_rate", ""); 
 
   //bransan added
@@ -297,7 +297,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_file", "");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "{126}");
+  AddStrField("watch_flits", "2550");
   AddStrField("watch_transactions", "");
 
   AddStrField("watch_out", "-");

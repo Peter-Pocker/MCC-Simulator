@@ -501,7 +501,7 @@ void IQRouter::_InputQueuing()
 
     if (f->watch)
     {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *gWatchOut << GetSimTime() << " | " << FullName() << " | "  
                  << "Adding flit " << f->id
                  << " to VC " << vc
                  << " at input " << input

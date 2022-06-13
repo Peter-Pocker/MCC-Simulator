@@ -753,7 +753,7 @@ void dor_next_torus( int cur, int dest, int in_port,
 }
 
 //=============================================================
-
+/*
 void dim_order_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
   int out_port = inject ? -1 : dor_next_mesh( r->GetID( ), f->dest );
@@ -795,7 +795,89 @@ void dim_order_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
 
   outputs->AddRange( out_port, vcBegin, vcEnd );
 }
+*/
+void dim_order_mesh(const Router* r, const Flit* f, int in_channel, OutputSet* outputs, bool inject)
+{
+    int out_port;
+    if (f->mflag && !inject)
+    {
+        if (f->src == r->GetID())
+        {
+            vector<int> dests(f->mdest.first);
+            for (int i = 0; i < dests.size(); i++)
+            {
+                out_port = dor_next_mesh(r->GetID(), dests[i]);
+                
+                    wiredcount++;
+                
 
+                IQRouter* ir = (IQRouter*)r;
+                ir->addFlitMCastEntry(dests[i], out_port, in_channel, f->vc, false);
+
+                if (f->watch) {
+                    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+                        << " Outport for mdest " << dests[i]
+                        << " is " << out_port
+                        << endl;
+                }
+            }
+        }
+        else
+        {
+            vector<int> dests(f->mdest.first);
+            for (int i = 0; i < dests.size(); i++)
+            {
+                out_port = dor_next_mesh(r->GetID(), dests[i]);
+                IQRouter* ir = (IQRouter*)r;
+                ir->addFlitMCastEntry(dests[i], out_port, in_channel, f->vc, 0);
+
+                if (f->watch) {
+                    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+                        << " Outport for mdest " << dests[i]
+                        << " is " << out_port
+                        << endl;
+                }
+            }
+        }
+    }
+    else {
+        out_port = inject ? -1 : dor_next_mesh(r->GetID(), f->dest);
+        int vcBegin = 0, vcEnd = gNumVCs - 1;
+        if (f->type == Flit::READ_REQUEST) {
+            vcBegin = gReadReqBeginVC;
+            vcEnd = gReadReqEndVC;
+        }
+        else if (f->type == Flit::WRITE_REQUEST) {
+            vcBegin = gWriteReqBeginVC;
+            vcEnd = gWriteReqEndVC;
+        }
+        else if (f->type == Flit::READ_REPLY) {
+            vcBegin = gReadReplyBeginVC;
+            vcEnd = gReadReplyEndVC;
+        }
+        else if (f->type == Flit::WRITE_REPLY) {
+            vcBegin = gWriteReplyBeginVC;
+            vcEnd = gWriteReplyEndVC;
+        }
+        assert(((f->vc >= vcBegin) && (f->vc <= vcEnd)) || (inject && (f->vc < 0)));
+
+        if (!inject && f->watch) {
+            *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
+                << "Adding VC range ["
+                << vcBegin << ","
+                << vcEnd << "]"
+                << " at output port " << out_port
+                << " for flit " << f->id
+                << " (input port " << in_channel
+                << ", destination " << f->dest << ")"
+                << "." << endl;
+        }
+        outputs->Clear();
+        // if(!inject)
+        // cout<<"rid "<<r->GetID()<<" ishub "<<r->isHub()<<" fid "<< f->id<<" Outport "<<out_port<<endl;
+        outputs->AddRange(out_port, vcBegin, vcEnd);
+    }
+}
 //=============================================================
 
 //Bransan added new routing function for wmesh
