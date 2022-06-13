@@ -85,6 +85,18 @@ IQRouter::IQRouter(Configuration const &config, Module *parent,
     Error("Switch allocator cannot have zero delay.");
   }
 
+  vector<int> watch_flits = config.GetIntArray("watch_flits");
+  for (size_t i = 0; i < watch_flits.size(); ++i)
+  {
+      _flits_to_watch.insert(watch_flits[i]);
+  }
+
+  vector<int> watch_packets = config.GetIntArray("watch_packets");
+  for (size_t i = 0; i < watch_packets.size(); ++i)
+  {
+      _packets_to_watch.insert(watch_packets[i]);
+  }
+
   // Routing
   string const rf = config.GetStr("routing_function") + "_" + config.GetStr("topology");
   map<string, tRoutingFunction>::const_iterator rf_iter = gRoutingFunctionMap.find(rf);
@@ -4376,6 +4388,7 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
     generatee duplicate flits using global cur_pid and cur_id
    */
   Flit * f_dup;
+  
   int temp_size = _packet_size;
   if(cf->type == Flit::READ_REPLY)
     temp_size = _read_reply_size;
@@ -4394,8 +4407,9 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
 
   f_dup = Flit::New();
   f_dup->pid    = mcast_map[cf->pid][output].first;
+  bool watch = gWatchOut && (_packets_to_watch.count(f_dup->pid) > 0);
   f_dup->id     = mcast_map[cf->pid][output].second;
-  f_dup->watch  = cf->watch;
+  f_dup->watch  = cf->watch | watch| (gWatchOut && (_flits_to_watch.count(f_dup->id) > 0));
   f_dup->subnetwork = cf->subnetwork;
   f_dup->src    = cf->src;
   f_dup->itime = GetSimTime();
@@ -4427,13 +4441,23 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
 
   f_dup->mflag = cf->mflag;
 
+  if (f_dup->head && f_dup->watch)
+  {
+      cout << "dup_Pid " << f_dup->pid << " Destinations are: ";
+      for (int i = 0; i < f_dup->mdest.first.size(); i++) {
+          cout << f_dup->mdest.first[i] << " "<< endl;
+      }
+      cout << "num dests " << f_dup->mdest.first.size() << " simtime " << GetSimTime() << " source " << f_dup->src << endl;
+  }
   if ( f_dup->watch ) { 
       *gWatchOut << GetSimTime() << " | "
                   << "node" << cf->src << " | "
                   << "Enqueuing Duplicate flit " << f_dup->id
                   << " (packet " << f_dup->pid
-                  << ") at time " << cf->ctime
+                  << ") created by original packet" << cf->pid<<" at time " << cf->ctime
+                  <<" source is " << f_dup->src
                   << "." << endl;
+      
   }
 
 

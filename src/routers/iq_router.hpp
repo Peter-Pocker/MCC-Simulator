@@ -39,6 +39,7 @@
 #include "router.hpp"
 #include "../routefunc.hpp"
 
+
 using namespace std;
 
 class VC;
@@ -117,6 +118,9 @@ public:
   vector<int> _switch_hold_in;
   vector<int> _switch_hold_out;
   vector<int> _switch_hold_vc;
+
+  set<int> _flits_to_watch;
+  set<int> _packets_to_watch;
 
   bool _noq;
   vector<vector<int> > _noq_next_output_port;
