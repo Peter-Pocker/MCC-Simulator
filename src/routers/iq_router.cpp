@@ -4136,7 +4136,14 @@ void IQRouter::_SWAllocUpdateMulti()
         assert(f_dup->mdest.second.size() == 0);
         f_dup->dest = f_dup->mdest.first[0];
       }
-
+      if (f_dup->head && f_dup->watch)
+      {
+          cout << "dup_Pid " << f_dup->pid << " Destinations are: ";
+          for (int i = 0; i < f_dup->mdest.first.size(); i++) {
+              cout << f_dup->mdest.first[i] << " " << endl;
+          }
+          cout << "num dests " << f_dup->mdest.first.size() << " simtime " << GetSimTime() << " source " << f_dup->src << endl;
+      }
 
 #ifdef TRACK_FLOWS
       --_stored_flits[f->cl][input];
@@ -4441,14 +4448,7 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
 
   f_dup->mflag = cf->mflag;
 
-  if (f_dup->head && f_dup->watch)
-  {
-      cout << "dup_Pid " << f_dup->pid << " Destinations are: ";
-      for (int i = 0; i < f_dup->mdest.first.size(); i++) {
-          cout << f_dup->mdest.first[i] << " "<< endl;
-      }
-      cout << "num dests " << f_dup->mdest.first.size() << " simtime " << GetSimTime() << " source " << f_dup->src << endl;
-  }
+
   if ( f_dup->watch ) { 
       *gWatchOut << GetSimTime() << " | "
                   << "node" << cf->src << " | "

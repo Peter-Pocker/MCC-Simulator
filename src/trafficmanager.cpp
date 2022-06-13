@@ -826,11 +826,12 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
 
     if (!f->dropped)
     {
-        
-        if (f->head && (f->dest != dest))
+         
+        if (f->head && ((f->mflag == 0 && f->dest != dest)||(f->mflag ==1 && f->mdest.first.size()==1 && f->mdest.first[0] != dest)))
         {
             ostringstream err;
-            cout<<f->dest<<endl;
+            cout<<f->dest <<endl;
+            
             err << "Flit " << f->id << " arrived at incorrect output " << dest;
             Error(err.str());
         }

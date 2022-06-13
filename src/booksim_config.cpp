@@ -48,11 +48,11 @@ BookSimConfig::BookSimConfig( )
   _int_map["subnets"] = 1;
 
   //==== Topology options =======================
-  AddStrField( "topology", "mesh" );
+  AddStrField( "topology", "wmesh" );
   _int_map["k"] = 8; //network radix
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
-  _int_map["m"] = 2; // Bransan number of wireless routers
+  _int_map["m"] = 0; // Bransan number of wireless routers
   AddStrField( "routing_function", "dor" );
 
   //simulator tries to correclty adjust latency for node/router placement 
@@ -165,11 +165,11 @@ BookSimConfig::BookSimConfig( )
   _int_map["perm_seed"] = 0; // seed value for random permuation trafficpattern generator
   AddStrField("perm_seed", ""); // workaround to allow special "time" value
 
-  _float_map["injection_rate"]       = 0.1;
+  _float_map["injection_rate"]       = 0.01;
   AddStrField("injection_rate", ""); // workaraound to allow for vector specification
   
   //bransan added
-  _float_map["mcast_injection_rate"]       = 0.1;
+  _float_map["mcast_injection_rate"]       = 0.01;
   AddStrField("mcast_injection_rate", ""); 
 
   //bransan added
@@ -181,13 +181,13 @@ BookSimConfig::BookSimConfig( )
   AddStrField("mcast_switch", ""); 
 
   //bransan added
-  _int_map["num_mcast_dests"]       = 8;
+  _int_map["num_mcast_dests"]       = 2;
   AddStrField("num_mcast_dests", ""); 
 
   _int_map["injection_rate_uses_flits"] = 0;
 
   // number of flits per packet
-  _int_map["packet_size"] = 1;
+  _int_map["packet_size"] = 2;
   AddStrField("packet_size", ""); // workaraound to allow for vector specification
 
   // if multiple values are specified per class, set probabilities for each
@@ -297,10 +297,10 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_file", "");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "");
+  AddStrField("watch_flits", "{126}");
   AddStrField("watch_transactions", "");
 
-  AddStrField("watch_out", "");
+  AddStrField("watch_out", "-");
 
   AddStrField("stats_out", "");
 
