@@ -4130,14 +4130,15 @@ void IQRouter::_SWAllocUpdateMulti()
         }
       }
       f_dup->mdest = cur_buf->GetMcastTable(vc)[output];
-      if(output == 4)
-      {
-        assert(f_dup->mdest.first.size() == 1);
-        assert(f_dup->mdest.second.size() == 0);
+
+      if(f_dup->mdest.first.size() == 1 && f_dup->mdest.second.size() == 0){
         f_dup->dest = f_dup->mdest.first[0];
+        f_dup->mflag = false;
       }
       if (f_dup->head && f_dup->watch)
       {
+
+
           cout << "dup_Pid " << f_dup->pid << " Destinations are: ";
           for (int i = 0; i < f_dup->mdest.first.size(); i++) {
               cout << f_dup->mdest.first[i] << " " << endl;
@@ -4448,16 +4449,14 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
 
   f_dup->mflag = cf->mflag;
 
-
-  if ( f_dup->watch ) { 
+  if (f_dup->watch) {
       *gWatchOut << GetSimTime() << " | "
-                  << "node" << cf->src << " | "
-                  << "Enqueuing Duplicate flit " << f_dup->id
-                  << " (packet " << f_dup->pid
-                  << ") created by original packet" << cf->pid<<" at time " << cf->ctime
-                  <<" source is " << f_dup->src
-                  << "." << endl;
-      
+          << "node" << cf->src << " | "
+          << "Enqueuing Duplicate flit " << f_dup->id
+          << " (packet " << f_dup->pid
+          << ") created by original packet" << cf->pid << " at time " << cf->ctime
+          << " source is " << f_dup->src
+          << "." << endl;
   }
 
 
