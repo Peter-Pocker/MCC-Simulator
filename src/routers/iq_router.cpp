@@ -4451,7 +4451,7 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
 
   if (f_dup->watch) {
       *gWatchOut << GetSimTime() << " | "
-          << "node" << cf->src << " | "
+          << FullName() << " | "
           << "Enqueuing Duplicate flit " << f_dup->id
           << " (packet " << f_dup->pid
           << ") created by original packet" << cf->pid << " at time " << cf->ctime

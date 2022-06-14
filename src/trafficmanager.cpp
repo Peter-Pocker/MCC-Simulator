@@ -1248,7 +1248,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
         //Flag used to inject multicast packet only at periodic intervals
 
         if(_mcast_switch) {
-            bool mcast_time_flag = (GetSimTime() % _mcast_inject_time) == 0; //1;//
+            bool mcast_time_flag = 1;// = (GetSimTime() % _mcast_inject_time) == 0; //1;//
             if(mcast_flag && mcast_time_flag)
             {   
                 // cout<<"simtime : "<<GetSimTime()<<endl;
