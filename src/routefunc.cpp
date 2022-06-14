@@ -830,6 +830,7 @@ void dim_order_mesh(const Router* r, const Flit* f, int in_channel, OutputSet* o
                 out_port = dor_next_mesh(r->GetID(), dests[i]);
                 IQRouter* ir = (IQRouter*)r;
                 ir->addFlitMCastEntry(dests[i], out_port, in_channel, f->vc, 0);
+                
 
                 if (f->watch) {
                     *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "

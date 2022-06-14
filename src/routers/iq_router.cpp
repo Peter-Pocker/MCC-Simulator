@@ -481,17 +481,6 @@ void IQRouter::_InputQueuing()
     assert((input >= 0) && (input < _inputs));
 
     Flit *const f = iter->second;
-    // if(GetID() == 9 && f->id == 29049)
-    // {
-    //   // cout<<"At router 9 flit 29049 mdest wireless contents "<<endl;
-    //   // cout<<"wired size "<<f->mdest.first.size()<<" wireless size "<<f->mdest.second.size()<<" "<<f->mdest.first[0]<<" "<<f->mdest.first[1]<<endl;
-      
-    //   // for(int i = 0; i< f->mdest.second.size(); i++)
-    //   // {
-    //   //   getchar();
-    //   //   cout<<"i "<<i<<" "<<f->mdest.second[i]<<endl;
-    //   // }
-    // }
     assert(f);
 
     int const vc = f->vc;
@@ -590,7 +579,7 @@ void IQRouter::_InputQueuing()
       {
         _sw_hold_vcs.push_back(make_pair(-1, make_pair(make_pair(input, vc),
                                                        -1)));
-      }
+      }//todo add mcast
       else
       {
         if (f->mflag)
@@ -800,7 +789,7 @@ void IQRouter::_VCAllocEvaluate()
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                  << "Beginning VC allocation for VC " << vc
                  << " at input " << input
-                 << " (front: " << f->id
+                 << " (front fid = : " << f->id << " pid = "<<f->pid << " mflag = "<< f->mflag
                  << ")." << endl;
     }
 
@@ -3957,16 +3946,20 @@ void IQRouter::_SWAllocUpdateMulti()
     assert((vc >= 0) && (vc < _vcs));
 
     Buffer *const cur_buf = _buf[input];
-    // cout<<"RRid "<<GetID()<<endl; 
+    Flit* const f = cur_buf->FrontFlit(vc);
+    //if(cur_buf->GetMcastTable(vc).size()!=0 && f->mflag ==1){
+    // cout<<"GetMcastTable(vc).size "<< cur_buf->GetMcastTable(vc).size() <<endl;
     assert(!cur_buf->Empty(vc));
+
     if(cur_buf->GetMCastCount(vc) == cur_buf->GetMcastTable(vc).size())
     {
       assert((cur_buf->GetState(vc) == VC::active) ||
             (_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)));
     }
-
-    Flit *const f = cur_buf->FrontFlit(vc);
+    
+    
     assert(f);
+    assert(f->mflag == 1);
     assert(f->vc == vc);
 
     if (f->watch)
@@ -3974,7 +3967,7 @@ void IQRouter::_SWAllocUpdateMulti()
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                  << "Completed switch allocation for VC " << vc
                  << " at input " << input
-                 << " (front: " << f->id
+                 << " (front fid: " << f->id << " pid =" << f->pid << " mflag =" << f->mflag
                  << ")." << endl;
     }
 
@@ -4104,6 +4097,7 @@ void IQRouter::_SWAllocUpdateMulti()
       Flit* f_dup;
       if(mcount == cur_buf->GetMcastTable(vc).size())
       {
+
         cur_buf->RemoveFlit(vc);
         // cur_buf->SetMCastCount(vc, 0);
         f_dup = f;
@@ -4112,7 +4106,7 @@ void IQRouter::_SWAllocUpdateMulti()
         if ( f_dup->watch ) { 
         *gWatchOut << GetSimTime() << " | "
                     << "Egress original flit " << f_dup->id
-                    << " (packet " << f_dup->pid
+                    << " (packet " << f_dup->pid << " mflag = "<<f_dup->mflag
                     << ") at output port" << output
                     << "." << endl;
         }
@@ -4124,7 +4118,7 @@ void IQRouter::_SWAllocUpdateMulti()
         if ( f_dup->watch ) { 
             *gWatchOut << GetSimTime() << " | "
                         << "Egress Duplicate flit " << f_dup->id
-                        << " (packet " << f_dup->pid
+                        << " (packet " << f_dup->pid << f_dup->pid << " mflag = " << f_dup->mflag
                         << ") at output port" << output
                         << "." << endl;
         }
@@ -4389,6 +4383,7 @@ void IQRouter::_SWAllocUpdateMulti()
     _sw_alloc_vcs_multi.pop_front();
   }
 }
+
 
 Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
 {
