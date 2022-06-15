@@ -245,6 +245,7 @@ protected:
 
   set<int> _flits_to_watch;
   set<int> _packets_to_watch;
+  set<int> _routers_to_watch;
 
   bool _print_csv_results;
 

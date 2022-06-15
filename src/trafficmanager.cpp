@@ -463,7 +463,11 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     {
         _packets_to_watch.insert(watch_packets[i]);
     }
-
+    vector<int> watch_routers = config.GetIntArray("watch_routers");
+    for (size_t i = 0; i < watch_routers.size(); ++i)
+    {
+        _routers_to_watch.insert(watch_routers[i]);
+    }
     string stats_out_file = config.GetStr("stats_out");
     if (stats_out_file == "")
     {
@@ -1166,7 +1170,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
 
     int subnetwork = ((packet_type == Flit::ANY_TYPE) ? RandomInt(_subnets - 1) : _subnet[packet_type]);
 
-    if (watch)
+    if (watch || (_routers_to_watch.count(source) > 0))
     {
         *gWatchOut << GetSimTime() << " | "
                    << "node" << source << " | "
@@ -1269,7 +1273,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
                     f_diff[f->id] = 0;
                     mcast_flag = false; 
                 }
-                 if(f->head && f->watch)
+                 if(f->head && f->watch || (_routers_to_watch.count(source) > 0))
                  {
                      cout<<"Pid "<<f->pid<<" Destinations are: "<<endl;
                      for(int i = 0; i < f->mdest.first.size() ; i++){
@@ -1282,7 +1286,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
         
 
         
-        if (f->watch)
+        if (f->watch || (_routers_to_watch.count(source) > 0))
         {
             *gWatchOut << GetSimTime() << " | "
                        << "node" << source << " | "
@@ -1377,7 +1381,7 @@ void TrafficManager::_Step()
             Flit *const f = _net[subnet]->ReadFlit(n);
             if (f)
             {
-                if (f->watch)
+                if (f->watch || (_routers_to_watch.count(n)>0))
                 {
                     *gWatchOut << GetSimTime() << " | "
                                << "node" << n << " | "
@@ -1509,7 +1513,7 @@ void TrafficManager::_Step()
                         _rf(router, cf, in_channel, &cf->la_route_set, false);
                         cf->vc = -1;
 
-                        if (cf->watch)
+                        if (cf->watch||(_routers_to_watch.count(n) > 0))
                         {
                             *gWatchOut << GetSimTime() << " | "
                                        << "node" << n << " | "
@@ -1526,7 +1530,7 @@ void TrafficManager::_Step()
                         assert(vc_end >= se.vc_start && vc_end <= se.vc_end);
                         assert(vc_start <= vc_end);
                     }
-                    if (cf->watch)
+                    if (cf->watch || (_routers_to_watch.count(n) > 0))
                     {
                         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                    << "Finding output VC for flit " << cf->id
@@ -1545,7 +1549,7 @@ void TrafficManager::_Step()
                         assert((vc >= vc_start) && (vc <= vc_end));
                         if (!dest_buf->IsAvailableFor(vc))
                         {
-                            if (cf->watch)
+                            if (cf->watch || (_routers_to_watch.count(n) > 0))
                             {
                                 *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                            << "  Output VC " << vc << " is busy." << endl;
@@ -1555,7 +1559,7 @@ void TrafficManager::_Step()
                         {
                             if (dest_buf->IsFullFor(vc))
                             {
-                                if (cf->watch)
+                                if (cf->watch || (_routers_to_watch.count(n) > 0))
                                 {
                                     *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                                << "  Output VC " << vc << " is full." << endl;
@@ -1563,7 +1567,7 @@ void TrafficManager::_Step()
                             }
                             else
                             {
-                                if (cf->watch)
+                                if (cf->watch || (_routers_to_watch.count(n) > 0))
                                 {
                                     *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                                << "  Selected output VC " << vc << "." << endl;
@@ -1577,7 +1581,7 @@ void TrafficManager::_Step()
 
                 if (cf->vc == -1)
                 {
-                    if (cf->watch)
+                    if (cf->watch || (_routers_to_watch.count(n) > 0))
                     {
                         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                    << "No output VC found for flit " << cf->id
@@ -1588,7 +1592,7 @@ void TrafficManager::_Step()
                 {
                     if (dest_buf->IsFullFor(cf->vc))
                     {
-                        if (cf->watch)
+                        if (cf->watch || (_routers_to_watch.count(n) > 0))
                         {
                             *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                        << "Selected output VC " << cf->vc
@@ -1622,7 +1626,7 @@ void TrafficManager::_Step()
                             assert(router);
                             int in_channel = inject->GetSinkPort();
                             _rf(router, f, in_channel, &f->la_route_set, false);
-                            if (f->watch)
+                            if (f->watch || (_routers_to_watch.count(n) > 0))
                             {
                                 *gWatchOut << GetSimTime() << " | "
                                            << "node" << n << " | "
@@ -1630,7 +1634,7 @@ void TrafficManager::_Step()
                                            << "." << endl;
                             }
                         }
-                        else if (f->watch)
+                        else if (f->watch || (_routers_to_watch.count(n) > 0))
                         {
                             *gWatchOut << GetSimTime() << " | "
                                        << "node" << n << " | "
@@ -1664,7 +1668,7 @@ void TrafficManager::_Step()
                     assert(f->pri >= 0);
                 }
 
-                if (f->watch)
+                if (f->watch || (_routers_to_watch.count(n) > 0))
                 {
                     *gWatchOut << GetSimTime() << " | "
                                << "node" << n << " | "
@@ -1711,7 +1715,7 @@ void TrafficManager::_Step()
                 Flit *const f = iter->second;
 
                 f->atime = _time;
-                if (f->watch)
+                if (f->watch || (_routers_to_watch.count(n) > 0))
                 {
                     *gWatchOut << GetSimTime() << " | "
                                << "node" << n << " | "
