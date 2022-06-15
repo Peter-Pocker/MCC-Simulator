@@ -287,7 +287,7 @@ void IQRouter::_InternalStep()
   bool activity = !_proc_credits.empty();
 
   
-  activity = _Multi_Internal_Sub_Step(activity);
+ // activity = _Multi_Internal_Sub_Step(activity);
 
   activity = _Internal_Sub_Step(activity);
 
@@ -304,12 +304,21 @@ bool IQRouter::_Internal_Sub_Step(bool activity)
 {
   if (!_route_vcs.empty())
     _RouteEvaluate();
+  if (!_route_vcs_multi.empty())
+      _RouteEvaluateMulti();
 
   if (_vc_allocator)
   {
     _vc_allocator->Clear();
     if (!_vc_alloc_vcs.empty())
       _VCAllocEvaluate();
+  }
+
+  if (_vc_allocator)
+  {
+      _vc_allocator->Clear();
+      if (!_vc_alloc_vcs_multi.empty())
+          _VCAllocEvaluateMulti();
   }
 
   if (_hold_switch_for_packet)
@@ -326,6 +335,9 @@ bool IQRouter::_Internal_Sub_Step(bool activity)
   if (!_sw_alloc_vcs.empty())
     _SWAllocEvaluate();
 
+  if (!_sw_alloc_vcs_multi.empty())
+      _SWAllocEvaluateMulti();
+
   if (!_crossbar_flits.empty())
     _SwitchEvaluate();
 
@@ -334,13 +346,21 @@ bool IQRouter::_Internal_Sub_Step(bool activity)
     _RouteUpdate();
     activity = activity || !_route_vcs.empty();
   }
-
+  if (!_route_vcs_multi.empty())
+  {
+      _RouteUpdateMulti();
+      activity = activity || !_route_vcs_multi.empty();
+  }
   if (!_vc_alloc_vcs.empty())
   {
     _VCAllocUpdate();
     activity = activity || !_vc_alloc_vcs.empty();
   }
-
+  if (!_vc_alloc_vcs_multi.empty())
+  {
+      _VCAllocUpdateMulti();
+      activity = activity || !_vc_alloc_vcs_multi.empty();
+  }
   if (_hold_switch_for_packet)
   {
     if (!_sw_hold_vcs.empty())
@@ -355,7 +375,11 @@ bool IQRouter::_Internal_Sub_Step(bool activity)
     _SWAllocUpdate();
     activity = activity || !_sw_alloc_vcs.empty();
   }
-  
+  if (!_sw_alloc_vcs_multi.empty())
+  {
+      _SWAllocUpdateMulti();
+      activity = activity || !_sw_alloc_vcs_multi.empty();
+  }
   if (!_crossbar_flits.empty())
   {
     _SwitchUpdate();
@@ -365,44 +389,25 @@ bool IQRouter::_Internal_Sub_Step(bool activity)
   return activity;
 }
 
-
+/*
 bool IQRouter::_Multi_Internal_Sub_Step(bool activity)
 {
-  if (!_route_vcs_multi.empty())
-    _RouteEvaluateMulti();
 
-  if (_vc_allocator)
-  {
-    _vc_allocator->Clear();
-    if (!_vc_alloc_vcs_multi.empty())
-      _VCAllocEvaluateMulti();
-  }
+
+
 
   _sw_allocator->Clear();
 
-  if (!_sw_alloc_vcs_multi.empty())
-    _SWAllocEvaluateMulti();
+
 
   // if (!_crossbar_flits_multi.empty())
   //   _SwitchEvaluateMulti();
 
-  if (!_route_vcs_multi.empty())
-  {
-    _RouteUpdateMulti();
-    activity = activity || !_route_vcs_multi.empty();
-  }
 
-  if (!_vc_alloc_vcs_multi.empty())
-  {
-    _VCAllocUpdateMulti();
-    activity = activity || !_vc_alloc_vcs_multi.empty();
-  }
 
-  if (!_sw_alloc_vcs_multi.empty())
-  {
-    _SWAllocUpdateMulti();
-    activity = activity || !_sw_alloc_vcs_multi.empty();
-  }
+
+
+
   
   // if (!_crossbar_flits_multi.empty())
   // {
@@ -412,7 +417,7 @@ bool IQRouter::_Multi_Internal_Sub_Step(bool activity)
 
   return activity;
 }
-
+*/
 void IQRouter::WriteOutputs()
 {
   _SendFlits();
@@ -2658,7 +2663,7 @@ void IQRouter::_RouteEvaluateMulti()
     if (f->watch)
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                 << "Beginning routing for VC " << vc
+                 << "mcast Beginning routing for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -2699,7 +2704,7 @@ void IQRouter::_RouteUpdateMulti()
     if (f->watch)
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                 << "Completed routing for VC " << vc
+                 << "mcast Completed routing for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -2767,7 +2772,7 @@ void IQRouter::_VCAllocEvaluateMulti()
     {
       // cout<<"TIme is "<<time<<endl;
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                 << "Beginning VC allocation for VC " << vc
+                 << "mcast Beginning VC allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -2838,7 +2843,7 @@ void IQRouter::_VCAllocEvaluateMulti()
           int const use_input = use_input_and_vc / _vcs;
           int const use_vc = use_input_and_vc % _vcs;
           *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                      << "  VC " << out_vc
+                      << " mcast VC " << out_vc
                       << " at output " << out_port
                       << " is in use by VC " << use_vc
                       << " at input " << use_input;
@@ -2879,7 +2884,7 @@ void IQRouter::_VCAllocEvaluateMulti()
           if (f->watch)
           {
             *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                        << "  Requesting VC " << out_vc
+                        << " mcast Requesting VC " << out_vc
                         << " at output " << out_port
                         << " (in_pri: " << in_priority
                         << ", out_pri: " << out_priority
@@ -2983,7 +2988,7 @@ void IQRouter::_VCAllocEvaluateMulti()
       if (f->watch)
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                   << "Assigning VC " << match_vc
+                   << "mcast Assigning VC " << match_vc
                    << " at output " << match_output
                    << " to VC " << vc
                    << " at input " << input
@@ -2999,7 +3004,7 @@ void IQRouter::_VCAllocEvaluateMulti()
       if (f->watch)
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                   << "VC allocation failed for VC " << vc
+                   << "mcast VC allocation failed for VC " << vc
                    << " at input " << input
                    << "." << endl;
       }
@@ -3122,7 +3127,7 @@ void IQRouter::_VCAllocUpdateMulti()
     if (f->watch)
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                 << "Completed VC allocation for VC " << vc
+                 << "mcast Completed VC allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -3141,7 +3146,7 @@ void IQRouter::_VCAllocUpdateMulti()
       if (f->watch)
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                   << "  Acquiring assigned VC " << match_vc
+                   << " mcast Acquiring assigned VC " << match_vc
                    << " at output " << match_output
                    << "." << endl;
       }
@@ -3352,7 +3357,7 @@ void IQRouter::_SWAllocEvaluateMulti()
     if (f->watch)
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                 << "Beginning switch allocation for VC " << vc
+                 << "mcast Beginning switch allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -3373,7 +3378,7 @@ void IQRouter::_SWAllocEvaluateMulti()
         if (f->watch)
         {
           *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                     << "  VC " << dest_vc
+                     << " mcast VC " << dest_vc
                      << " at output " << dest_output
                      << " is full." << endl;
           *gWatchOut << GetSimTime() << " | " << dest_buf->IsFullFor(dest_vc) << " || "
@@ -3564,7 +3569,7 @@ void IQRouter::_SWAllocEvaluateMulti()
         if (f->watch)
         {
           *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                     << "Assigning output " << (expanded_output / _output_speedup)
+                     << "mcast Assigning output " << (expanded_output / _output_speedup)
                      << "." << (expanded_output % _output_speedup)
                      << " to VC " << vc
                      << " at input " << input
@@ -3673,7 +3678,7 @@ void IQRouter::_SWAllocEvaluateMulti()
       if (f->watch)
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                   << "Switch allocation failed for VC " << vc
+                   << "mcast Switch allocation failed for VC " << vc
                    << " at input " << input
                    << ": No output granted." << endl;
       }
@@ -3965,7 +3970,7 @@ void IQRouter::_SWAllocUpdateMulti()
     if (f->watch)
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                 << "Completed switch allocation for VC " << vc
+                 << "mcast Completed switch allocation for VC " << vc
                  << " at input " << input
                  << " (front fid: " << f->id << " pid =" << f->pid << " mflag =" << f->mflag
                  << ")." << endl;
@@ -4088,7 +4093,7 @@ void IQRouter::_SWAllocUpdateMulti()
       if (f->watch)
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                   << "  Scheduling switch connection from input " << input
+                   << " mcast Scheduling switch connection from input " << input
                    << "." << (vc % _input_speedup)
                    << " to output " << output
                    << "." << (expanded_output % _output_speedup)
