@@ -294,14 +294,14 @@ BookSimConfig::BookSimConfig( )
 
   _int_map["viewer_trace"] = 0;
 
-  AddStrField("watch_file", "");
+  AddStrField("watch_file", "test");
   
-  AddStrField("watch_packets", "");
+  AddStrField("watch_packets", "{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18}");
   AddStrField("watch_flits", "");
-  AddStrField("watch_routers", "{5,6}");
+  AddStrField("watch_routers", "{5}");
   AddStrField("watch_transactions", "");
 
-  AddStrField("watch_out", "-");
+  AddStrField("watch_out", "test");
 
   AddStrField("stats_out", "");
 

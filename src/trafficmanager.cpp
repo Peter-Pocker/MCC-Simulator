@@ -480,6 +480,7 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     else
     {
         _stats_out = new ofstream(stats_out_file.c_str());
+
         config.WriteMatlabFile(_stats_out);
     }
 

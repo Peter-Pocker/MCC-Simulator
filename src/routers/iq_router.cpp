@@ -507,7 +507,7 @@ void IQRouter::_InputQueuing()
         assert(cur_buf->FrontFlit(vc));
         *gWatchOut << ", front: " << cur_buf->FrontFlit(vc)->id;
       }
-      *gWatchOut << ")." << endl;
+      *gWatchOut << "). Here is input_queuing" << endl;
       
     }
     cur_buf->AddFlit(vc, f);
@@ -553,7 +553,7 @@ void IQRouter::_InputQueuing()
                      << "Using precomputed lookahead routing information for VC " << vc
                      << " at input " << input
                      << " (front: " << f->id
-                     << ")." << endl;
+                     << "). Here is input_queuing" << endl;
         }
 
         cur_buf->SetRouteSet(vc, &f->la_route_set);
@@ -594,12 +594,24 @@ void IQRouter::_InputQueuing()
             _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(make_pair(input, vc), output_and_vc),        
                                                           -1)));
           }
-          // cout<<"pushin into switch alloc input qeueing "<<f->id<<endl;
+          if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+          {
+              *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                  << "pushin into mcastswitch alloc input qeueing fid = " << f->id << endl;
+          }
 
         }
-        else
+        else{
           _sw_alloc_vcs.push_back(make_pair(-1, make_pair(make_pair(input, vc),
                                                         -1)));
+          if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+          {
+              *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                  << "pushin into unicastswitch alloc input qeueing fid = " << f->id << endl;
+          }
+
+        }
+
       }
     }
   }
@@ -689,7 +701,7 @@ void IQRouter::_RouteEvaluate()
                  << "Beginning routing for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
-                 << ")." << endl;
+                 << "). Here is RouteEvaluate" << endl;
     }
   }
 }
@@ -3157,6 +3169,10 @@ void IQRouter::_VCAllocUpdateMulti()
       if (!_speculative)
       {_sw_alloc_vcs_multi
         .push_back(make_pair(-1, make_pair(make_pair(item.second.first,output_and_vc), -1)));
+      if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+      {
+          *gWatchOut << "pushin into switch alloc vcalloc"<<f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+      }
         // cout<<"pushin into switch alloc vcalloc"<<f->id<<endl;
       }
     }
@@ -3323,7 +3339,7 @@ void IQRouter::_SWAllocEvaluateMulti()
        iter != _sw_alloc_vcs_multi.end();
        ++iter)
   {
-
+    
     int const time = iter->first;
     if (time >= 0)
     {
@@ -3358,7 +3374,7 @@ void IQRouter::_SWAllocEvaluateMulti()
                  << "mcast Beginning switch allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
-                 << ")." << endl;
+                 << "). Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
     }
 
     // if (cur_buf->GetState(vc) == VC::active) //all flits go here and then just calls continue
@@ -3930,461 +3946,461 @@ void IQRouter::_SWAllocEvaluateMulti()
 
 void IQRouter::_SWAllocUpdateMulti()
 {
-  while (!_sw_alloc_vcs_multi.empty())
-  {
-    
-    pair<int, pair<pair<pair<int, int>, int >,int> > const &item = _sw_alloc_vcs_multi.front();
-
-    int const time = item.first;
-    if ((time < 0) || (GetSimTime() < time))
-    {
-      break;
-    }
-    assert(GetSimTime() == time);
-
-    int mcount;
-    int const input = item.second.first.first.first;
-    assert((input >= 0) && (input < _inputs));
-    int const vc = item.second.first.first.second;
-    assert((vc >= 0) && (vc < _vcs));
-
-    Buffer *const cur_buf = _buf[input];
-    Flit* const f = cur_buf->FrontFlit(vc);
-    //if(cur_buf->GetMcastTable(vc).size()!=0 && f->mflag ==1){
-    // cout<<"GetMcastTable(vc).size "<< cur_buf->GetMcastTable(vc).size() <<endl;
-    assert(!cur_buf->Empty(vc));
-
-    if(cur_buf->GetMCastCount(vc) == cur_buf->GetMcastTable(vc).size())
-    {
-      assert((cur_buf->GetState(vc) == VC::active) ||
-            (_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)));
-    }
-    
-    
-    assert(f);
-    assert(f->mflag == 1);
-    assert(f->vc == vc);
-
-    if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-    {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                 << "mcast Completed switch allocation for VC " << vc
-                 << " at input " << input
-                 << " (front fid: " << f->id << " pid =" << f->pid << " mflag =" << f->mflag
-                 << ")." << endl;
-    }
-
-    int const expanded_output = item.second.second;
-
-    if (expanded_output >= 0)
+    while (!_sw_alloc_vcs_multi.empty())
     {
 
-      int const expanded_input = input * _input_speedup + vc % _input_speedup;
-      assert(_switch_hold_vc[expanded_input] < 0);
-      assert(_switch_hold_in[expanded_input] < 0);
-      assert(_switch_hold_out[expanded_output] < 0);
+        pair<int, pair<pair<pair<int, int>, int >, int> > const& item = _sw_alloc_vcs_multi.front();
 
-      int const output = expanded_output / _output_speedup;
-      assert((output >= 0) && (output < _outputs));
-
-      BufferState *const dest_buf = _next_buf[output];
-
-      int match_vc;
-
-      // if (!_vc_allocator && (cur_buf->GetState(vc) == VC::vc_alloc))
-      // {
-        
-      //   assert(f->head);
-
-      //   int const cl = f->cl;
-      //   assert((cl >= 0) && (cl < _classes));
-
-      //   int const vc_offset = _vc_rr_offset[output * _classes + cl];
-
-      //   match_vc = -1;
-      //   int match_prio = numeric_limits<int>::min();
-
-      //   const OutputSet *route_set = cur_buf->GetRouteSet(vc);
-      //   set<OutputSet::sSetElement> const setlist = route_set->GetSet();
-
-      //   assert(!_noq || (setlist.size() == 1));
-
-      //   for (set<OutputSet::sSetElement>::const_iterator iset = setlist.begin();
-      //        iset != setlist.end();
-      //        ++iset)
-      //   {
-      //     if (iset->output_port == output)
-      //     {
-
-      //       int vc_start;
-      //       int vc_end;
-
-      //       if (_noq && _noq_next_output_port[input][vc] >= 0)
-      //       {
-      //         assert(!_routing_delay);
-      //         vc_start = _noq_next_vc_start[input][vc];
-      //         vc_end = _noq_next_vc_end[input][vc];
-      //       }
-      //       else
-      //       {
-      //         vc_start = iset->vc_start;
-      //         vc_end = iset->vc_end;
-      //       }
-      //       assert(vc_start >= 0 && vc_start < _vcs);
-      //       assert(vc_end >= 0 && vc_end < _vcs);
-      //       assert(vc_end >= vc_start);
-
-      //       for (int out_vc = vc_start; out_vc <= vc_end; ++out_vc)
-      //       {
-      //         assert((out_vc >= 0) && (out_vc < _vcs));
-
-      //         int vc_prio = iset->pri;
-      //         if (_vc_prioritize_empty && !dest_buf->IsEmptyFor(out_vc))
-      //         {
-      //           assert(vc_prio >= 0);
-      //           vc_prio += numeric_limits<int>::min();
-      //         }
-
-      //         // FIXME: This check should probably be performed in Evaluate(),
-      //         // not Update(), as the latter can cause the outcome to depend on
-      //         // the order of evaluation!
-      //         if (dest_buf->IsAvailableFor(out_vc) &&
-      //             !dest_buf->IsFullFor(out_vc) &&
-      //             ((match_vc < 0) ||
-      //              RoundRobinArbiter::Supersedes(out_vc, vc_prio,
-      //                                            match_vc, match_prio,
-      //                                            vc_offset, _vcs)))
-      //         {
-      //           match_vc = out_vc;
-      //           match_prio = vc_prio;
-      //         }
-      //       }
-      //     }
-      //   }
-      //   assert(match_vc >= 0);
-
-      //   if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-      //   {
-      //     *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-      //                << "  Allocating VC " << match_vc
-      //                << " at output " << output
-      //                << " via piggyback VC allocation." << endl;
-      //   }
-
-      //   cur_buf->SetState(vc, VC::active);
-      //   cur_buf->SetOutput(vc, output, match_vc);
-      //   dest_buf->TakeBuffer(match_vc, input * _vcs + vc);
-
-      //   _vc_rr_offset[output * _classes + cl] = (match_vc + 1) % _vcs;
-      // }
-      // else
-      // {
-
-        // assert(cur_buf->GetOutputPort(vc) == output);
-
-      match_vc = item.second.first.second % _vcs;
-      mcount = cur_buf->GetMCastCount(vc);
-      cur_buf->SetMCastCount(vc, ++mcount);
-      // }
-      assert((match_vc >= 0) && (match_vc < _vcs));
-
-      if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-      {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                   << " mcast Scheduling switch connection from input " << input
-                   << "." << (vc % _input_speedup)
-                   << " to output " << output
-                   << "." << (expanded_output % _output_speedup)
-                   << "." << endl;
-      }
-      Flit* f_dup;
-      if(mcount == cur_buf->GetMcastTable(vc).size())
-      {
-
-        cur_buf->RemoveFlit(vc);
-        // cur_buf->SetMCastCount(vc, 0);
-        f_dup = f;
-        f_dup = _Generate_Duplicates(f,output,false);
-        // cout<<"source router "<<f_dup->src<<" original id "<<f->id<<" f_dup id "<<f_dup->id<<" output "<<output<<" rid "<<GetID()<<endl;
-        if ( f_dup->watch ) { 
-        *gWatchOut << GetSimTime() << " | "
-                    << "Egress original flit " << f_dup->id
-                    << " (packet " << f_dup->pid << " mflag = "<<f_dup->mflag
-                    << ") at output port" << output
-                    << "." << endl;
+        int const time = item.first;
+        if ((time < 0) || (GetSimTime() < time))
+        {
+            break;
         }
-      }
-      else
-      {
-        f_dup = _Generate_Duplicates(f,output,true);
-        // cout<<"source router "<<f_dup->src<<" original id "<<f->id<<" f_dup id "<<f_dup->id<<" output "<<output<<" rid "<<GetID()<<endl;
-        if ( f_dup->watch ) { 
-            *gWatchOut << GetSimTime() << " | "
+        assert(GetSimTime() == time);
+
+        int mcount;
+        int const input = item.second.first.first.first;
+        assert((input >= 0) && (input < _inputs));
+        int const vc = item.second.first.first.second;
+        assert((vc >= 0) && (vc < _vcs));
+
+        Buffer* const cur_buf = _buf[input];
+        Flit* const f = cur_buf->FrontFlit(vc);
+        //if(cur_buf->GetMcastTable(vc).size()!=0 && f->mflag ==1){
+        // cout<<"GetMcastTable(vc).size "<< cur_buf->GetMcastTable(vc).size() <<endl;
+        assert(!cur_buf->Empty(vc));
+
+        if (cur_buf->GetMCastCount(vc) == cur_buf->GetMcastTable(vc).size())
+        {
+            assert((cur_buf->GetState(vc) == VC::active) ||
+                (_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)));
+        }
+
+
+        assert(f);
+        assert(f->mflag == 1);
+        assert(f->vc == vc);
+
+        if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+        {
+            *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                << "mcast Completed switch allocation for VC " << vc
+                << " at input " << input
+                << " (front fid: " << f->id << " pid =" << f->pid << " mflag =" << f->mflag
+                << ")." << endl;
+        }
+
+        int const expanded_output = item.second.second;
+
+        if (expanded_output >= 0)
+        {
+
+            int const expanded_input = input * _input_speedup + vc % _input_speedup;
+            assert(_switch_hold_vc[expanded_input] < 0);
+            assert(_switch_hold_in[expanded_input] < 0);
+            assert(_switch_hold_out[expanded_output] < 0);
+
+            int const output = expanded_output / _output_speedup;
+            assert((output >= 0) && (output < _outputs));
+
+            BufferState* const dest_buf = _next_buf[output];
+
+            int match_vc;
+
+
+
+            match_vc = item.second.first.second % _vcs;
+            mcount = cur_buf->GetMCastCount(vc);
+            cur_buf->SetMCastCount(vc, ++mcount);
+            // }
+            assert((match_vc >= 0) && (match_vc < _vcs));
+
+            if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+            {
+                *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                    << " mcast Scheduling switch connection from input " << input
+                    << "." << (vc % _input_speedup)
+                    << " to output " << output
+                    << "." << (expanded_output % _output_speedup)
+                    << "." << endl;
+            }
+            Flit* f_dup;
+            if (mcount == cur_buf->GetMcastTable(vc).size())
+            {
+
+                cur_buf->RemoveFlit(vc);
+                // cur_buf->SetMCastCount(vc, 0);
+                f_dup = f;
+                f_dup = _Generate_Duplicates(f, output, false);
+                // cout<<"source router "<<f_dup->src<<" original id "<<f->id<<" f_dup id "<<f_dup->id<<" output "<<output<<" rid "<<GetID()<<endl;
+                if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0)) {
+                    *gWatchOut << GetSimTime() << " | "
+                        << "Egress original flit " << f_dup->id
+                        << " (packet " << f_dup->pid << " mflag = " << f_dup->mflag
+                        << ") at output port" << output
+                        << "." << endl;
+                }
+            }
+            else
+            {
+                f_dup = _Generate_Duplicates(f, output, true);
+                // cout<<"source router "<<f_dup->src<<" original id "<<f->id<<" f_dup id "<<f_dup->id<<" output "<<output<<" rid "<<GetID()<<endl;
+                if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0)) {
+                    *gWatchOut << GetSimTime() << " | "
                         << "Egress Duplicate flit " << f_dup->id
                         << " (packet " << f_dup->pid << f_dup->pid << " mflag = " << f_dup->mflag
                         << ") at output port" << output
                         << "." << endl;
-        }
-      }
-      f_dup->mdest = cur_buf->GetMcastTable(vc)[output];
+                }
+            }
+            f_dup->mdest = cur_buf->GetMcastTable(vc)[output];
 
-      if(f_dup->mdest.first.size() == 1 && f_dup->mdest.second.size() == 0){
-        f_dup->dest = f_dup->mdest.first[0];
-        f_dup->mflag = false;
-      }
-      if (f_dup->head && f_dup->watch)
-      {
+            if (f_dup->mdest.first.size() == 1 && f_dup->mdest.second.size() == 0) {
+                f_dup->dest = f_dup->mdest.first[0];
+                f_dup->mflag = false;
+            }
+            if (f_dup->head && f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
+            {
 
 
-          cout << "dup_Pid " << f_dup->pid << " Destinations are: ";
-          for (int i = 0; i < f_dup->mdest.first.size(); i++) {
-              cout << f_dup->mdest.first[i] << " " << endl;
-          }
-          cout << "num dests " << f_dup->mdest.first.size() << " simtime " << GetSimTime() << " source " << f_dup->src << endl;
-      }
-
-#ifdef TRACK_FLOWS
-      --_stored_flits[f->cl][input];
-      if (f->tail)
-        --_active_packets[f->cl][input];
-#endif
-
-      _bufferMonitor->read(input, f);
-
-      f_dup->hops++;
-      f_dup->vc = match_vc;
-      if(cur_buf->GetOutputPort(vc) == 5) //5 is the port to hub
-      {
-        //Bransan Statistacks
-        int rid = hub_mapper[GetID()].second;
-
-        if(f->head)
-        {
-          wait_clock[rid].insert(make_pair(f->pid,GetSimTime()));
-          _cur_inter_hub = hub_mapper[f->dest].second;  
-          cur_buf->SetInterDest(vc, _cur_inter_hub);
-        }
-        f->inter_dest = cur_buf->GetInterDest(vc);
-        
-        if(f->tail)
-        {
-          
-          assert(wait_clock[rid].find(f->pid) != wait_clock[rid].end());
-          time_and_cnt[rid].first += (GetSimTime() - wait_clock[rid][f->pid]);
-          time_and_cnt[rid].second++;
-          wait_clock[rid].erase(f->pid);
-
-          cur_buf->SetInterDest(vc, -1);
-        }
-      }
-      // if (!_routing_delay && f_dup->head)
-      // {
-      //   const FlitChannel *channel = _output_channels[output];
-      //   const Router *router = channel->GetSink();
-      //   if (router)
-      //   {
-      //     if (_noq)
-      //     {
-      //       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-      //       {
-      //         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-      //                    << "Updating lookahead routing information for flit " << f->id
-      //                    << " (NOQ)." << endl;
-      //       }
-      //       int next_output_port = _noq_next_output_port[input][vc];
-      //       assert(next_output_port >= 0);
-      //       _noq_next_output_port[input][vc] = -1;
-      //       int next_vc_start = _noq_next_vc_start[input][vc];
-      //       assert(next_vc_start >= 0 && next_vc_start < _vcs);
-      //       _noq_next_vc_start[input][vc] = -1;
-      //       int next_vc_end = _noq_next_vc_end[input][vc];
-      //       assert(next_vc_end >= 0 && next_vc_end < _vcs);
-      //       _noq_next_vc_end[input][vc] = -1;
-      //       f->la_route_set.Clear();
-      //       f->la_route_set.AddRange(next_output_port, next_vc_start, next_vc_end);
-      //     }
-      //     else
-      //     {
-      //       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-      //       {
-      //         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-      //                    << "Updating lookahead routing information for flit " << f->id
-      //                    << "." << endl;
-      //       }
-      //       int in_channel = channel->GetSinkPort();
-      //       _rf(router, f, in_channel, &f->la_route_set, false);
-      //     }
-      //   }
-      //   else
-      //   {
-      //     f->la_route_set.Clear();
-      //   }
-      // }
+                *gWatchOut << "dup_Pid " << f_dup->pid << " Destinations are: ";
+                for (int i = 0; i < f_dup->mdest.first.size(); i++) {
+                    *gWatchOut << f_dup->mdest.first[i] << " " << endl;
+                }
+                *gWatchOut << "num dests " << f_dup->mdest.first.size() << " simtime " << GetSimTime() << " source " << f_dup->src << endl;
+            }
 
 #ifdef TRACK_FLOWS
-      ++_outstanding_credits[f->cl][output];
-      _outstanding_classes[output][f->vc].push(f->cl);
-#endif
-      // if(output == 5 && input ==3 && vc == 0 && match_vc == 0)
-      //   cout<<GetSimTime()<<" f_dup "<<f_dup->id<<endl;
-      dest_buf->SendingFlit(f_dup);
-      // if(GetID() == 10 && f_dup->id == 29049)
-      // {
-      //   cout<<"blech"<<endl;
-      // }
-      _crossbar_flits.push_back(make_pair(-1, make_pair(f_dup, make_pair(expanded_input, expanded_output))));
-      
-      if(mcount == cur_buf->GetMcastTable(vc).size())
-      {
-        if (_out_queue_credits.count(input) == 0)
-        {
-          _out_queue_credits.insert(make_pair(input, Credit::New()));
-        }
-        _out_queue_credits.find(input)->second->vc.insert(vc);
-      }
-      if (cur_buf->Empty(vc))
-      {
-        cur_buf->SetMCastCount(vc, 0);
-        if (f_dup->tail)
-        {
-          // cout<<"comes here right"<<endl;
-          if(mcount == cur_buf->GetMcastTable(vc).size())
-          {
-           cur_buf->SetState(vc, VC::idle);
-          }
-          
-          cur_buf->EraseMcastTable(vc);
-          cur_buf->EraseOutpair(vc);
-        }
-      }
-      else
-      {
-        Flit *const nf = cur_buf->FrontFlit(vc);
-        assert(nf);
-        assert(nf->vc == vc);
-        // if (f->tail)   //This doesn't happen (generally)
-        
-        //   assert(nf->head);
-        //   if (_routing_delay)
-        //   {
-        //     cur_buf->SetState(vc, VC::routing);
-        //     _route_vcs_multi.push_back(make_pair(-1, item.second.first));
-        //   }
-        //   else
-        //   {
-        //     if (nf->watch)
-        //     {
-        //       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-        //                  << "Using precomputed lookahead routing information for VC " << vc
-        //                  << " at input " << input
-        //                  << " (front: " << nf->id
-        //                  << ")." << endl;
-        //     }
-        //     cur_buf->SetRouteSet(vc, &nf->la_route_set);
-        //     cur_buf->SetState(vc, VC::vc_alloc);
-        //     if (_speculative)
-        //     {
-        //       _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first,
-        //                                                       -1)));
-        //     }
-        //     if (_vc_allocator)
-        //     {
-        //       _vc_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first,
-        //                                                       -1)));
-        //     }
-        //     if (_noq)
-        //     {
-        //       _UpdateNOQ(input, vc, nf);
-        //     }
-        //   }
-        // }
-        // else  //Body flits
-        // {
-          // if (_hold_switch_for_packet)
-          // {
-          //   if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-          //   {
-          //     *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-          //                << "Setting up switch hold for VC " << vc
-          //                << " at input " << input
-          //                << "." << (expanded_input % _input_speedup)
-          //                << " to output " << output
-          //                << "." << (expanded_output % _output_speedup)
-          //                << "." << endl;
-          //   }
-          //   _switch_hold_vc[expanded_input] = vc;
-          //   _switch_hold_in[expanded_input] = expanded_output;
-          //   _switch_hold_out[expanded_output] = expanded_input;
-          //   _sw_hold_vcs.push_back(make_pair(-1, make_pair(item.second.first,
-          //                                                  -1)));
-          // }
-          // else
-          // {   //Body flit and tail flit gets pushed back here
-            // _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first,
-            //                                                 -1)));
-        if(mcount == cur_buf->GetMcastTable(vc).size())
-        {
-          // cout<<"Im pushing here "<<f->id<<endl;
-          cur_buf->SetMCastCount(vc, 0);
-          vector<int> outputandvc = cur_buf->GetMulticastOutpair(vc);
-          // cout<<"My size "<<outputandvc.size()<<endl;
-          for(int i = 0;i<outputandvc.size();i++)
-          {
-            _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first.first ,outputandvc[i]) , -1)));
-          }
-          // cout<<"pushin into switch alloc swallocupdate if output got"<<f_dup->id<<endl;
-
-        }
-
-          // }
-        // }
-      }
-    }
-    else
-    {
-      if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-      {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
-                   << "  No output port allocated." << endl;
-      }
-
-#ifdef TRACK_STALLS
-      assert((expanded_output == -1) || // for stalls that are accounted for in VC allocation path
-             (expanded_output == STALL_BUFFER_BUSY) ||
-             (expanded_output == STALL_BUFFER_CONFLICT) ||
-             (expanded_output == STALL_BUFFER_FULL) ||
-             (expanded_output == STALL_BUFFER_RESERVED) ||
-             (expanded_output == STALL_CROSSBAR_CONFLICT));
-      if (expanded_output == STALL_BUFFER_BUSY)
-      {
-        ++_buffer_busy_stalls[f->cl];
-      }
-      else if (expanded_output == STALL_BUFFER_CONFLICT)
-      {
-        ++_buffer_conflict_stalls[f->cl];
-      }
-      else if (expanded_output == STALL_BUFFER_FULL)
-      {
-        ++_buffer_full_stalls[f->cl];
-      }
-      else if (expanded_output == STALL_BUFFER_RESERVED)
-      {
-        ++_buffer_reserved_stalls[f->cl];
-      }
-      else if (expanded_output == STALL_CROSSBAR_CONFLICT)
-      {
-        ++_crossbar_conflict_stalls[f->cl];
-      }
+            --_stored_flits[f->cl][input];
+            if (f->tail)
+                --_active_packets[f->cl][input];
 #endif
 
-      _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first, -1)));
-      // cout<<"pushin into switch alloc swallocupdate if output not got"<<f->id<<endl;
+            _bufferMonitor->read(input, f);
 
-    }
+            f_dup->hops++;
+            f_dup->vc = match_vc;
+            if (cur_buf->GetOutputPort(vc) == 5) //5 is the port to hub
+            {
+                //Bransan Statistacks
+                int rid = hub_mapper[GetID()].second;
+
+                if (f->head)
+                {
+                    wait_clock[rid].insert(make_pair(f->pid, GetSimTime()));
+                    _cur_inter_hub = hub_mapper[f->dest].second;
+                    cur_buf->SetInterDest(vc, _cur_inter_hub);
+                }
+                f->inter_dest = cur_buf->GetInterDest(vc);
+
+                if (f->tail)
+                {
+
+                    assert(wait_clock[rid].find(f->pid) != wait_clock[rid].end());
+                    time_and_cnt[rid].first += (GetSimTime() - wait_clock[rid][f->pid]);
+                    time_and_cnt[rid].second++;
+                    wait_clock[rid].erase(f->pid);
+
+                    cur_buf->SetInterDest(vc, -1);
+                }
+            }
+            // if (!_routing_delay && f_dup->head)
+            // {
+            //   const FlitChannel *channel = _output_channels[output];
+            //   const Router *router = channel->GetSink();
+            //   if (router)
+            //   {
+            //     if (_noq)
+            //     {
+            //       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+            //       {
+            //         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+            //                    << "Updating lookahead routing information for flit " << f->id
+            //                    << " (NOQ)." << endl;
+            //       }
+            //       int next_output_port = _noq_next_output_port[input][vc];
+            //       assert(next_output_port >= 0);
+            //       _noq_next_output_port[input][vc] = -1;
+            //       int next_vc_start = _noq_next_vc_start[input][vc];
+            //       assert(next_vc_start >= 0 && next_vc_start < _vcs);
+            //       _noq_next_vc_start[input][vc] = -1;
+            //       int next_vc_end = _noq_next_vc_end[input][vc];
+            //       assert(next_vc_end >= 0 && next_vc_end < _vcs);
+            //       _noq_next_vc_end[input][vc] = -1;
+            //       f->la_route_set.Clear();
+            //       f->la_route_set.AddRange(next_output_port, next_vc_start, next_vc_end);
+            //     }
+            //     else
+            //     {
+            //       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+            //       {
+            //         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+            //                    << "Updating lookahead routing information for flit " << f->id
+            //                    << "." << endl;
+            //       }
+            //       int in_channel = channel->GetSinkPort();
+            //       _rf(router, f, in_channel, &f->la_route_set, false);
+            //     }
+            //   }
+            //   else
+            //   {
+            //     f->la_route_set.Clear();
+            //   }
+            // }
+
+#ifdef TRACK_FLOWS
+            ++_outstanding_credits[f->cl][output];
+            _outstanding_classes[output][f->vc].push(f->cl);
+#endif
+            // if(output == 5 && input ==3 && vc == 0 && match_vc == 0)
+            //   cout<<GetSimTime()<<" f_dup "<<f_dup->id<<endl;
+            dest_buf->SendingFlit(f_dup);
+            // if(GetID() == 10 && f_dup->id == 29049)
+            // {
+            //   cout<<"blech"<<endl;
+            // }
+            _crossbar_flits.push_back(make_pair(-1, make_pair(f_dup, make_pair(expanded_input, expanded_output))));
+
+            if (mcount == cur_buf->GetMcastTable(vc).size())
+            {
+                if (_out_queue_credits.count(input) == 0)
+                {
+                    _out_queue_credits.insert(make_pair(input, Credit::New()));
+                }
+                _out_queue_credits.find(input)->second->vc.insert(vc);
+            }
+            if (cur_buf->Empty(vc))
+            {
+                cur_buf->SetMCastCount(vc, 0);
+                assert(mcount == cur_buf->GetMcastTable(vc).size());
+                if (f_dup->tail)
+                {
+                    // cout<<"comes here right"<<endl;
+                    if (mcount == cur_buf->GetMcastTable(vc).size())
+                    {
+                        cur_buf->SetState(vc, VC::idle);
+                    }
+
+                    cur_buf->EraseMcastTable(vc);
+                    cur_buf->EraseOutpair(vc);
+                    if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
+                    {
+                        *gWatchOut << "mcast all output is acquired pid=" << f_dup->pid << " fid= " <<
+                            f_dup->id << "turn to idle ="
+                            << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                    }
+                }
+            }
+            else
+            {
+                Flit* const nf = cur_buf->FrontFlit(vc);
+                assert(nf);
+                assert(nf->vc == vc);
+                if (f_dup->tail) {
+                    if (mcount == cur_buf->GetMcastTable(vc).size()) {
+                        assert(nf->head);
+                        if (_routing_delay)
+                        {
+                            cur_buf->SetState(vc, VC::routing);
+                            if (nf->mflag) {
+                                _route_vcs_multi.push_back(make_pair(-1, item.second.first.first));
+                            }
+                            else
+                            {
+                                _route_vcs.push_back(make_pair(-1, item.second.first.first));
+                            }
+                            cur_buf->EraseMcastTable(vc);
+                            cur_buf->EraseOutpair(vc);
+                            cur_buf->SetMCastCount(vc, 0);
+                            if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
+                            {
+                                *gWatchOut << "mcast all output is acquired pid=" << f_dup->pid << " fid= " <<
+                                    f_dup->id << "turn to routing for pid =" << nf->pid << " fid = " << nf->id
+                                    << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                            }
+                        }
+                    }
+                    else if (mcount < cur_buf->GetMcastTable(vc).size()) {
+                        /*
+                        _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first,
+                            -1)));*/
+                        if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
+                        {
+                            *gWatchOut << "mcast partial output is not acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                        }
+                    }
+
+                }
+                else if (!f_dup->tail) {
+                    
+                    if (mcount == cur_buf->GetMcastTable(vc).size()) {
+                        /*
+                        vector<int> outputandvc = cur_buf->GetMulticastOutpair(vc);
+                        // cout<<"My size "<<outputandvc.size()<<endl;
+                        for (int i = 0; i < outputandvc.size(); i++)
+                        {
+                            _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first.first, outputandvc[i]), -1)));
+                        }*/
+                        cur_buf->SetMCastCount(vc, 0);
+                        if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
+                        {
+                            *gWatchOut << "mcast all output is acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                        }
+                    }
+                    else if (mcount < cur_buf->GetMcastTable(vc).size()) {
+                        /*
+                        _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first,
+                            -1)));*/
+                        if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
+                        {
+                            *gWatchOut << "mcast partial output is not acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                        }
+                    }
+
+                }
+
+                /*
+                else
+                {
+                    if (nf->watch || (_routers_to_watch.count(GetID()) > 0))
+                    {
+                        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                            << "Using precomputed lookahead routing information for VC " << vc
+                            << " at input " << input
+                            << " (front: " << nf->id
+                            << ")." << endl;
+                    }
+                    cur_buf->SetRouteSet(vc, &nf->la_route_set);
+                    cur_buf->SetState(vc, VC::vc_alloc);
+                }*/
+                /*
+                if (_speculative)
+                {
+                    if (nf->mflag) {
+                        _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first,
+                                                                  -1)));
+                }
+                if (_vc_allocator)
+                {
+                  _vc_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first,
+                                                                  -1)));
+                }
+                if (_noq)
+                {
+                  _UpdateNOQ(input, vc, nf);
+                }
+                */
+            }
+            /*
+            else if (!cur_buf->Empty(vc) && mcount < cur_buf->GetMcastTable(vc).size()) //Body flits
+            {
+              if (_hold_switch_for_packet)
+              {
+                if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+                {
+                  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                             << "Setting up switch hold for VC " << vc
+                            << " at input " << input
+                             << "." << (expanded_input % _input_speedup)
+                             << " to output " << output
+                             << "." << (expanded_output % _output_speedup)
+                             << "." << endl;
+                }
+                _switch_hold_vc[expanded_input] = vc;
+                _switch_hold_in[expanded_input] = expanded_output;
+                _switch_hold_out[expanded_output] = expanded_input;
+                _sw_hold_vcs.push_back(make_pair(-1, make_pair(item.second.first,
+                                                               -1)));
+              }
+              //Body flit and tail flit gets pushed back here
+                _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first,
+                    -1)));
+            }
+
+            if (mcount == cur_buf->GetMcastTable(vc).size())
+            {
+                // cout<<"Im pushing here "<<f->id<<endl;
+                cur_buf->SetMCastCount(vc, 0);
+                vector<int> outputandvc = cur_buf->GetMulticastOutpair(vc);
+                // cout<<"My size "<<outputandvc.size()<<endl;
+                for (int i = 0; i < outputandvc.size(); i++)
+                {
+                    _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first.first, outputandvc[i]), -1)));
+                }
+                if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+                {
+                    *gWatchOut << "pushin into switch alloc swalloc update if output got" << f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                }
+                // cout<<"pushin into switch alloc swallocupdate if output got"<<f_dup->id<<endl;
+
+            }
+
+            // }
+          // }
+
+
+            else
+            {
+                if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+                {
+                    *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+                        << "  No output port allocated." << endl;
+                }
+
+    #ifdef TRACK_STALLS
+                assert((expanded_output == -1) || // for stalls that are accounted for in VC allocation path
+                    (expanded_output == STALL_BUFFER_BUSY) ||
+                    (expanded_output == STALL_BUFFER_CONFLICT) ||
+                    (expanded_output == STALL_BUFFER_FULL) ||
+                    (expanded_output == STALL_BUFFER_RESERVED) ||
+                    (expanded_output == STALL_CROSSBAR_CONFLICT));
+                if (expanded_output == STALL_BUFFER_BUSY)
+                {
+                    ++_buffer_busy_stalls[f->cl];
+                }
+                else if (expanded_output == STALL_BUFFER_CONFLICT)
+                {
+                    ++_buffer_conflict_stalls[f->cl];
+                }
+                else if (expanded_output == STALL_BUFFER_FULL)
+                {
+                    ++_buffer_full_stalls[f->cl];
+                }
+                else if (expanded_output == STALL_BUFFER_RESERVED)
+                {
+                    ++_buffer_reserved_stalls[f->cl];
+                }
+                else if (expanded_output == STALL_CROSSBAR_CONFLICT)
+                {
+                    ++_crossbar_conflict_stalls[f->cl];
+                }
+    #endif
+
+                _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first, -1)));
+                if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+                {
+                    *gWatchOut << "pushin into switch alloc swallocupdate if output not got" << f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                }
+
+
+            }
+    */
     // if(f->id == 7451)
     // cout<<"im popiing"<<endl;
-    _sw_alloc_vcs_multi.pop_front();
-  }
+        }
+        else {
+        _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first, -1)));
+        if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+        {
+            *gWatchOut << "pushin into switch alloc swallocupdate if output not got" << f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+        }
+}
+        _sw_alloc_vcs_multi.pop_front();
+        if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+        {
+            *gWatchOut << "after pop front Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+        }
+    }
 }
 
 
@@ -4447,12 +4463,12 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
 
   f_dup->mflag = cf->mflag;
 
-  if (f_dup->watch) {
+  if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0)) {
       *gWatchOut << GetSimTime() << " | "
           << FullName() << " | "
           << "Enqueuing Duplicate flit " << f_dup->id
           << " (packet " << f_dup->pid
-          << ") created by original packet" << cf->pid << " at time " << cf->ctime
+          << ") created by original packet " << cf->pid <<" and fid = "<<cf->id<< " at time " << cf->ctime
           << " source is " << f_dup->src
           << "." << endl;
   }
