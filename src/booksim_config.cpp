@@ -106,7 +106,7 @@ BookSimConfig::BookSimConfig( )
   
   _int_map["received_queue_size"]  = 32; //Recieved queue size  
   _int_map["num_vcs"]         = 16;  
-  _int_map["vc_buf_size"]     = 2;  //per vc buffer size
+  _int_map["vc_buf_size"]     = 8;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
   AddStrField("buffer_policy", "private"); //buffer sharing policy
 
@@ -169,7 +169,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("injection_rate", ""); // workaraound to allow for vector specification
   
   //bransan added
-  _float_map["mcast_injection_rate"]       = 0.0004;
+  _float_map["mcast_injection_rate"]       = 0;
   AddStrField("mcast_injection_rate", ""); 
 
   //bransan added
@@ -297,8 +297,8 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_file", "test");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "{105039,105151,15567}");
-  AddStrField("watch_routers", "5");
+  AddStrField("watch_flits", "");
+  AddStrField("watch_routers", "");
   AddStrField("watch_transactions", "");
 
   AddStrField("watch_out", "test");

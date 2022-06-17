@@ -898,7 +898,8 @@ void IQRouter::_VCAllocEvaluate()
               *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                          << "  VC " << out_vc
                          << " at output " << out_port
-                         << " is full." << "last pid = "<<dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
+                         << " is full." << " last pid = "<<dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
+            dest_buf->Display(*gWatchOut);
             reserved |= !dest_buf->IsFull();
           }
           else
@@ -1706,7 +1707,8 @@ void IQRouter::_SWAllocEvaluate()
           *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                      << "  VC " << dest_vc
                      << " at output " << dest_output
-                     << " is full." << "last pid = " << dest_buf->_last_pid[dest_vc] << "last fid = " << dest_buf->_last_id[dest_vc] << endl;
+                     << " is full." << " last pid = " << dest_buf->_last_pid[dest_vc] << "last fid = " << dest_buf->_last_id[dest_vc] << endl;
+          dest_buf->Display(*gWatchOut);
           *gWatchOut << GetSimTime() << " | " << dest_buf->IsFullFor(dest_vc) << " || "
                      << "  outbufsize " << _output_buffer_size
                      << " output_buffer[dest_output].size() " << _output_buffer[dest_output].size()
@@ -2878,7 +2880,8 @@ void IQRouter::_VCAllocEvaluateMulti()
             *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                         << "  VC " << out_vc
                         << " at output " << out_port
-                        << " is full." << dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
+                        << " is full. " <<"last pid = "<< dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
+          dest_buf->Display(*gWatchOut);
           reserved |= !dest_buf->IsFull();
         }
         else
@@ -3394,11 +3397,13 @@ void IQRouter::_SWAllocEvaluateMulti()
           *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                      << " mcast VC " << dest_vc
                      << " at output " << dest_output
-                     << " is full." << dest_buf->_last_pid[dest_vc] << "last fid = " << dest_buf->_last_id[dest_vc] << endl;
+                     << " is full. "<<"last pid = " << dest_buf->_last_pid[dest_vc] << "last fid = " << dest_buf->_last_id[dest_vc] << endl;
+          dest_buf->Display(*gWatchOut);
           *gWatchOut << GetSimTime() << " | " << dest_buf->IsFullFor(dest_vc) << " || "
                      << "  outbufsize " << _output_buffer_size
                      << " output_buffer[dest_output].size() " << _output_buffer[dest_output].size()
                      << endl;
+          
         }
         iter->second.second = dest_buf->IsFull() ? STALL_BUFFER_FULL : STALL_BUFFER_RESERVED;
         continue;
@@ -4234,13 +4239,13 @@ void IQRouter::_SWAllocUpdateMulti()
                 else if (!f_dup->tail) {
                     
                     if (mcount == cur_buf->GetMcastTable(vc).size()) {
-                        /*
+                        
                         vector<int> outputandvc = cur_buf->GetMulticastOutpair(vc);
                         // cout<<"My size "<<outputandvc.size()<<endl;
                         for (int i = 0; i < outputandvc.size(); i++)
                         {
                             _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first.first, outputandvc[i]), -1)));
-                        }*/
+                        }
                         cur_buf->SetMCastCount(vc, 0);
                         if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                         {

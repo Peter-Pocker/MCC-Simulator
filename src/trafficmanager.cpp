@@ -1554,6 +1554,7 @@ void TrafficManager::_Step()
                             {
                                 *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                            << "  Output VC " << vc << " is busy." << endl;
+                                dest_buf->Display(*gWatchOut);
                             }
                         }
                         else
@@ -1564,6 +1565,7 @@ void TrafficManager::_Step()
                                 {
                                     *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                                << "  Output VC " << vc << " is full." << endl;
+                                    dest_buf->Display(*gWatchOut);
                                 }
                             }
                             else
@@ -1572,6 +1574,7 @@ void TrafficManager::_Step()
                                 {
                                     *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                                << "  Selected output VC " << vc << "." << endl;
+                                    dest_buf->Display(*gWatchOut);
                                 }
                                 cf->vc = vc;
                                 break;
@@ -1587,6 +1590,7 @@ void TrafficManager::_Step()
                         *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                                    << "No output VC found for flit " << cf->id
                                    << "." << endl;
+                        dest_buf->Display(*gWatchOut);
                     }
                 }
                 else
@@ -1599,6 +1603,7 @@ void TrafficManager::_Step()
                                        << "Selected output VC " << cf->vc
                                        << " is full for flit " << cf->id
                                        << "." << endl;
+                            dest_buf->Display(*gWatchOut);
                         }
                     }
                     else
