@@ -898,7 +898,7 @@ void IQRouter::_VCAllocEvaluate()
               *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                          << "  VC " << out_vc
                          << " at output " << out_port
-                         << " is full." << endl;
+                         << " is full." << "last pid = "<<dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
             reserved |= !dest_buf->IsFull();
           }
           else
@@ -1706,7 +1706,7 @@ void IQRouter::_SWAllocEvaluate()
           *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                      << "  VC " << dest_vc
                      << " at output " << dest_output
-                     << " is full." << endl;
+                     << " is full." << "last pid = " << dest_buf->_last_pid[dest_vc] << "last fid = " << dest_buf->_last_id[dest_vc] << endl;
           *gWatchOut << GetSimTime() << " | " << dest_buf->IsFullFor(dest_vc) << " || "
                      << "  outbufsize " << _output_buffer_size
                      << " output_buffer[dest_output].size() " << _output_buffer[dest_output].size()
@@ -2878,7 +2878,7 @@ void IQRouter::_VCAllocEvaluateMulti()
             *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                         << "  VC " << out_vc
                         << " at output " << out_port
-                        << " is full." << endl;
+                        << " is full." << dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
           reserved |= !dest_buf->IsFull();
         }
         else
@@ -3394,7 +3394,7 @@ void IQRouter::_SWAllocEvaluateMulti()
           *gWatchOut << GetSimTime() << " | " << FullName() << " | "
                      << " mcast VC " << dest_vc
                      << " at output " << dest_output
-                     << " is full." << endl;
+                     << " is full." << dest_buf->_last_pid[dest_vc] << "last fid = " << dest_buf->_last_id[dest_vc] << endl;
           *gWatchOut << GetSimTime() << " | " << dest_buf->IsFullFor(dest_vc) << " || "
                      << "  outbufsize " << _output_buffer_size
                      << " output_buffer[dest_output].size() " << _output_buffer[dest_output].size()

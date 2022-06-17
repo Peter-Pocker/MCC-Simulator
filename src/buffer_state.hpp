@@ -166,8 +166,7 @@ class BufferState : public Module {
   
   vector<int> _in_use_by;
   vector<bool> _tail_sent;
-  vector<int> _last_id;
-  vector<int> _last_pid;
+
 
 #ifdef TRACK_BUFFERS
   int _classes;
@@ -176,7 +175,8 @@ class BufferState : public Module {
 #endif
 
 public:
-
+    vector<int> _last_id;
+    vector<int> _last_pid;
   BufferState( const Configuration& config, 
 	       Module *parent, const string& name, bool connect_to_hub = false);
 

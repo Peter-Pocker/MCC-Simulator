@@ -708,7 +708,9 @@ void BufferState::Display( ostream & os ) const
   os << " occupied = " << _occupancy << endl;
   for ( int v = 0; v < _vcs; ++v ) {
     os << "  VC " << v << ": ";
-    os << "in_use_by = " << _in_use_by[v] 
+    os << "in_use_by = " << _in_use_by[v]
+       << "last_pid =" << _last_pid[v]
+       << "last_fid =" << _last_id[v]
        << ", tail_sent = " << _tail_sent[v]
        << ", occupied = " << _vc_occupancy[v] << endl;
   }

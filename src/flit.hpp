@@ -74,7 +74,6 @@ public:
   int  dest;
 
   int  pri;
-
   int  hops;
   bool watch;
   int  subnetwork;
