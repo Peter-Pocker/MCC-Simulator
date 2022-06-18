@@ -165,11 +165,11 @@ BookSimConfig::BookSimConfig( )
   _int_map["perm_seed"] = 0; // seed value for random permuation trafficpattern generator
   AddStrField("perm_seed", ""); // workaround to allow special "time" value
 
-  _float_map["injection_rate"]       = 0.2;
+  _float_map["injection_rate"]       = 0.1;
   AddStrField("injection_rate", ""); // workaraound to allow for vector specification
   
   //bransan added
-  _float_map["mcast_injection_rate"]       = 0;
+  _float_map["mcast_injection_rate"]       = 0.02;
   AddStrField("mcast_injection_rate", ""); 
 
   //bransan added
@@ -181,7 +181,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("mcast_switch", ""); 
 
   //bransan added
-  _int_map["num_mcast_dests"]       = 2;
+  _int_map["num_mcast_dests"]       = 4;
   AddStrField("num_mcast_dests", ""); 
 
   _int_map["injection_rate_uses_flits"] = 0;
@@ -258,7 +258,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["pair_stats"] = 0;
 
   // if avg. latency exceeds the threshold, assume unstable
-  _float_map["latency_thres"] = 500.0;
+  _float_map["latency_thres"] = 5000.0;
   AddStrField("latency_thres", ""); // workaround to allow for vector specification
 
    // consider warmed up once relative change in latency / throughput between successive iterations is smaller than this
@@ -297,8 +297,8 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_file", "test");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "");
-  AddStrField("watch_routers", "");
+  AddStrField("watch_flits", "{49004,49005}");
+  AddStrField("watch_routers", "{20}");
   AddStrField("watch_transactions", "");
 
   AddStrField("watch_out", "test");

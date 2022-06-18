@@ -324,7 +324,7 @@ bool Hub::_ReceiveFlits()
 
     if (f->watch)
     {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                   << "Received flit " << f->id
                   << " from channel at input " << input
                   << "." << endl;
@@ -350,7 +350,7 @@ bool Hub::_ReceiveFlits()
         Flit * f = p->_flits[i];
         if (f->watch)
         {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                     << "Received flit " << f->id
                     << " from channel at input " << input + 1
                     << "." << endl;
@@ -488,7 +488,7 @@ void Hub::_InputQueuing()
 
       if (f->watch)
       {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                   << "Adding flit " << f->id
                   << " to VC " << vc
                   << " at input " << input
@@ -530,7 +530,7 @@ void Hub::_InputQueuing()
         ready_send[GetID()] = true;
         if (f->watch)
         {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
           <<"Received tail at hub "<<GetID() <<" hub ready status : "<< ready_send[GetID()]
           <<" bcast outqueue front flit "<<_out_queue.front().second->id
           <<" remaining "<<_out_queue.size()-1
@@ -593,7 +593,7 @@ void Hub::_InputQueuing()
         
         if(f->watch)
         {  
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                     << "Adding flit " << f->id
                     << "to receive queue"<<endl;
         }
@@ -663,7 +663,7 @@ void Hub::_InputQueuing()
       Flit *f = _out_queue.front().second;
       if(f->watch)
       {  
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
         << " Conditions failed : Token " << A
         << " Ready to Send "<<B
         << " Ready to receive "<<C
@@ -741,7 +741,7 @@ void Hub::_VCAllocEvaluateNew()
     if (f->watch)
     {
       // cout<<"TIme is "<<time<<endl;
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                  << "Beginning VC allocation for receive queue flit"
                  << " (front: " << f->id
                  << ")." << endl;
@@ -809,7 +809,7 @@ void Hub::_VCAllocEvaluateNew()
           int const use_input_and_vc = dest_buf->UsedBy(out_vc);
           int const use_input = use_input_and_vc / _vcs;
           int const use_vc = use_input_and_vc % _vcs;
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                       << "  VC " << out_vc
                       << " at output " << out_port
                       << " is in use by VC " << use_vc
@@ -824,7 +824,7 @@ void Hub::_VCAllocEvaluateNew()
         if (_vc_busy_when_full && dest_buf->IsFullFor(out_vc))
         {
           if (f->watch)
-            *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+            *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                         << "  VC " << out_vc
                         << " at output " << out_port
                         << " is full." << endl;
@@ -835,7 +835,7 @@ void Hub::_VCAllocEvaluateNew()
           cred = true;
           if (f->watch)
           {
-            *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+            *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                         << "  Requesting VC " << out_vc
                         << " at output " << out_port
                       //  << " (in_pri: " << in_priority
@@ -862,7 +862,7 @@ void Hub::_VCAllocEvaluateNew()
 
   if (watched)
   {
-    *gWatchOut << GetSimTime() << " | " << _vc_allocator->FullName() << " | ";
+    *gWatchOut << GetSimTime() << " | " << _vc_allocator->FullName() << " | " << " rid = " <<GetID() ;
     _vc_allocator->PrintRequests(gWatchOut);
   }
 
@@ -870,7 +870,7 @@ void Hub::_VCAllocEvaluateNew()
 
   if (watched)
   {
-    *gWatchOut << GetSimTime() << " | " << _vc_allocator->FullName() << " | ";
+    *gWatchOut << GetSimTime() << " | " << _vc_allocator->FullName() << " | " << " rid = " <<GetID() ;
     _vc_allocator->PrintGrants(gWatchOut);
   }
 
@@ -890,7 +890,7 @@ void Hub::_VCAllocEvaluateNew()
 
       if (f->watch)
       {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                    << "Assigning VC " << match_vc
                    << " at output " << match_output
                    << " at input " << input
@@ -904,7 +904,7 @@ void Hub::_VCAllocEvaluateNew()
 
       if (f->watch)
       {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                    << "VC allocation failed for recieve queue at input " << input
                    << "." << endl;
       }
@@ -931,7 +931,7 @@ void Hub::_VCAllocEvaluateNew()
       {
         if (f->watch)
         {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                      << "  Discarding previously generated grant for "
                      << " at input " << input
                      << ": VC " << match_vc
@@ -944,7 +944,7 @@ void Hub::_VCAllocEvaluateNew()
       {
         if (f->watch)
         {
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+          *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                      << "  Discarding previously generated grant "
                      << " at input " << input
                      << ": VC " << match_vc
@@ -964,7 +964,7 @@ void Hub::_VCAllocEvaluateNew()
     dests_buf->TakeBuffer(match_vc, input * _vcs + 0); 
     if (f->watch)
       {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                    << "  Acquiring assigned VC " << match_vc
                    << " at output " << 0
                    << "." << endl;
@@ -1093,7 +1093,7 @@ void Hub::_HubTraverseNew()
       assert(f->vc == vc);
       if (f->watch)
       {
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                   << "Completed Hub Traversal for VC " << vc
                   << " at input " << input
                   << " (front: " << f->id
@@ -1282,7 +1282,7 @@ void Hub::_SwitchEvaluate()
 
     if (f->watch)
     {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                  << "Beginning crossbar traversal for flit " << f->id
                  << " from input " << (expanded_input / _input_speedup)
                  << "." << (expanded_input % _input_speedup)
@@ -1319,7 +1319,7 @@ void Hub::_SwitchUpdate()
 
     if (f->watch)
     {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                  << "Completed crossbar traversal for flit " << f->id
                  << " from input " << input
                  << "." << (expanded_input % _input_speedup)
@@ -1331,7 +1331,7 @@ void Hub::_SwitchUpdate()
 
     if (f->watch)
     {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                  << "Buffering flit " << f->id
                  << " at output " << output
                  << "." << endl;
@@ -1385,7 +1385,7 @@ void Hub::_SendFlits()
     ++_sent_flits[f->cl][output];
 #endif
     if (f->watch)
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                   << "Sending flit " << f->id
                   << " to channel at output " << output
                   << "." << endl;
@@ -1409,7 +1409,7 @@ void Hub::_SendFlits()
       ++_sent_flits[p->cl][output];
 #endif
       if (p->watch)
-        *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                    << "Sending flit " << p->id
                    << " to channel at output " << output + 1
                    << "." << endl;
@@ -1552,7 +1552,7 @@ void Hub::_UpdateNOQ(int input, int vc, Flit const *f)
     assert(next_vc_start <= next_vc_end);
     if (f->watch)
     {
-      *gWatchOut << GetSimTime() << " | " << FullName() << " | "
+      *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                  << "Computing lookahead routing information for flit " << f->id
                  << " (NOQ)." << endl;
     }

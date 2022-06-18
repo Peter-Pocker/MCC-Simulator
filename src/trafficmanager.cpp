@@ -829,11 +829,11 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
                    << ")." << endl;
         if ( f->watch)
         {
-            cout  << " multi Destinations are: ";
+            *gWatchOut  << " multi Destinations are: ";
             for (int i = 0; i < f->mdest.first.size(); i++) {
-                cout << f->mdest.first[i] << " " << endl;
+                *gWatchOut << f->mdest.first[i] << " " << endl;
             }
-            cout << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << f->src << endl;
+            *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << f->src << endl;
         }
     }
 
@@ -1276,11 +1276,11 @@ void TrafficManager::_GeneratePacket(int source, int stype,
                 }
                  if(f->head && f->watch || (_routers_to_watch.count(source) > 0))
                  {
-                     cout<<"Pid "<<f->pid<<" Destinations are: "<<endl;
+                     *gWatchOut<<"Pid "<<f->pid<<" Destinations are: "<<endl;
                      for(int i = 0; i < f->mdest.first.size() ; i++){
-                         cout<<f->mdest.first[i]<<" ";
+                         *gWatchOut <<f->mdest.first[i]<<" ";
                      }
-                     cout<<"num dests "<<f->mdest.first.size()<<" simtime "<<GetSimTime()<<" source " << source<<endl;
+                     *gWatchOut <<"num dests "<<f->mdest.first.size()<<" simtime "<<GetSimTime()<<" source " << source<<endl;
                 }
             }
         }
@@ -1911,24 +1911,24 @@ void TrafficManager::_DisplayRemaining(ostream &os) const
 
         os << "Remaining flits: ";
         for (iter = _total_in_flight_flits[c].begin(), i = 0;
-             (iter != _total_in_flight_flits[c].end()) && (i < 10);
+             (iter != _total_in_flight_flits[c].end()) && (i < 50);
              iter++, i++)
         {
             os << iter->first << " ";
         }
-        if (_total_in_flight_flits[c].size() > 10)
+        if (_total_in_flight_flits[c].size() > 50)
             os << "[...] ";
 
         os << "(" << _total_in_flight_flits[c].size() << " flits)" << endl;
 
         os << "Measured flits: ";
         for (iter = _measured_in_flight_flits[c].begin(), i = 0;
-             (iter != _measured_in_flight_flits[c].end()) && (i < 10);
+             (iter != _measured_in_flight_flits[c].end()) && (i < 50);
              iter++, i++)
         {
             os << iter->first << " ";
         }
-        if (_measured_in_flight_flits[c].size() > 10)
+        if (_measured_in_flight_flits[c].size() > 50)
             os << "[...] ";
 
         os << "(" << _measured_in_flight_flits[c].size() << " flits)" << endl;
