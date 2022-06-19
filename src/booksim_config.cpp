@@ -169,7 +169,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("injection_rate", ""); // workaraound to allow for vector specification
   
   //bransan added
-  _float_map["mcast_injection_rate"]       = 0.1;
+  _float_map["mcast_injection_rate"]       = 0.01;
   AddStrField("mcast_injection_rate", ""); 
 
   //bransan added
@@ -297,7 +297,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_file", "test");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "");
+  AddStrField("watch_flits", "246813,246812");
   AddStrField("watch_routers", "");
   AddStrField("watch_transactions", "");
 

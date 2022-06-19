@@ -97,6 +97,10 @@ int total_mcast_dests = 0;
 int total_mcast_sum = 0;
 int total_mcast_hops = 0;
 
+int total_ucast_dests = 0;
+int total_ucast_sum = 0;
+int total_ucast_hops = 0;
+
 
 int mcastcount = 0;
 int total_count = 0;
@@ -126,8 +130,14 @@ vector<map<int, Flit *> > _total_in_flight_flits;
 vector<map<int, Flit *> > _measured_in_flight_flits;
 
 map<int, int> f_orig_ctime;
+map<int, int> f_orig_itime;
 map<int, int> f_diff;
+map<int, int> f_diff1;
 
+map<int, int> uf_orig_ctime;
+map<int, int> uf_orig_itime;
+map<int, int> uf_diff;
+map<int, int> uf_diff1;
 
 vector<map<int , int> > wait_clock;
 vector<pair<int, int> > time_and_cnt; 
@@ -298,18 +308,123 @@ int main( int argc, char **argv )
   int count = 0;
   int sum = 0;
   float avg = 0;
+  int max = 0;
+  int maxid = 0;
+  int min = INT_MAX;
+  int minid = 0;
   for(map<int, int>::iterator i = f_diff.begin(); i != f_diff.end(); i++)
   {
     sum += i->second;
+    if (i->second > max) {
+        max = i->second;
+        maxid = i->first;
+    }
+    if (i->second < min) {
+        min = i->second;
+        minid = i->first;
+    }
     count++;
   }
+  int count1 = 0;
+  int sum1 = 0;
+  float avg1 = 0;
+  int max1 = 0;
+  int maxid1 = 0;
+  int min1 = INT_MAX;
+  int minid1 = 0;
+  for (map<int, int>::iterator i1 = f_diff1.begin(); i1 != f_diff1.end(); i1++)
+  {
+      sum1 += i1->second;
+      if (i1->second > max1) {
+          max1 = i1->second;
+          maxid1 = i1->first;
+      }
+      if (i1->second < min1) {
+          min1 = i1->second;
+          minid1 = i1->first;
+      }
+      count1++;
+  }
+
+  int ucount = 0;
+  int usum = 0;
+  float uavg = 0;
+  int umax = 0;
+  int umaxid = 0;
+  int umin = INT_MAX;
+  int uminid = 0;
+  for (map<int, int>::iterator i2 = uf_diff.begin(); i2 != uf_diff.end(); i2++)
+  {
+      usum += i2->second;
+      if (i2->second > umax) {
+          umax = i2->second;
+          umaxid = i2->first;
+      }
+      if (i2->second < umin) {
+          umin = i2->second;
+          uminid = i2->first;
+      }
+      ucount++;
+  }
+  int ucount1 = 0;
+  int usum1 = 0;
+  float uavg1 = 0;
+  int umax1 = 0;
+  int umaxid1 = 0;
+  int umin1 = INT_MAX;
+  int uminid1 = 0;
+  for (map<int, int>::iterator i3 = uf_diff1.begin(); i3 != uf_diff1.end(); i3++)
+  {
+      usum1 += i3->second;
+      if (i3->second > umax1) {
+          umax1 = i3->second;
+          umaxid1 = i3->first;
+      }
+      if (i3->second < umin1) {
+          umin1 = i3->second;
+          uminid1 = i3->first;
+      }
+      ucount1++;
+      
+  }
+  cout << " ucount = " << ucount << " ucount1 =" << ucount1;
   if(count != 0)
   {
     avg = ((float)sum)/count;
-    cout<<"Average multicast transaction latency : ";
+    cout<<"Average multicast transaction latency (from creating time): ";
     cout<<avg<<endl;
   }
+  if (count != 0)
+  {
+      
+      cout << "Max multicast transaction latency (from creating time): ";
+      cout << max << " (fid = " << maxid << ")" << endl;
+  }
+  if (count != 0)
+  {
 
+      cout << "Min multicast transaction latency (from creating time): ";
+      cout << min << " (fid = " << minid <<")"<< endl;
+  }
+  if (count1 != 0)
+  {
+      avg1 = ((float)sum1) / count1;
+      cout << "Average multicast transaction latency (from inject time): ";
+      cout << avg1 << endl;
+  }
+  if (count1 != 0)
+  {
+
+      cout << "Max multicast transaction latency (from inject time): ";
+      cout << max1 << " (fid = " << maxid1 << ")" << endl;
+  }
+  if (count1 != 0)
+  {
+
+      cout << "Min multicast transaction latency (from inject time): ";
+      cout << min1 << " (fid = " << minid1 << ")" << endl;
+  }
+  /*
   cout<<"Average packet latency for multicast flits : ";
   if(total_mcast_dests > 0)
     cout<<((float)total_mcast_sum)/total_mcast_dests<<endl;
@@ -317,7 +432,7 @@ int main( int argc, char **argv )
   {
     cout<<"No mcast flits"<<endl;
   }
-
+*/
   cout<<"Average hops for multicast flits : ";
   if(total_mcast_dests > 0)
   {
@@ -330,16 +445,76 @@ int main( int argc, char **argv )
     cout<<"No mcast flits"<<endl;
   }
 
-  //Please try fixing this in the future. This code is a hack and is wrong.
-  //This is needed because for some reason when m=0, it generates one more
-  //multicast packet as compared to when m>0. And for some weird reason this
-  //only happens when k=16 and not when k=8
-  //==================================================================//
-  if(nhubs == 0 && gK == 16)
-    non_mdnd_hops -= latest_mdnd_hop;
-  //==================================================================//
-  cout<<"Number of hops without using MDND "<<non_mdnd_hops <<endl;
 
-  cout<<"Delta = "<<(1 - (float)(total_mcast_hops)/non_mdnd_hops)<<endl;
-  return result ? -1 : 0;
+  /*
+cout<<"Average packet latency for multicast flits : ";
+if(total_mcast_dests > 0)
+  cout<<((float)total_mcast_sum)/total_mcast_dests<<endl;
+else
+{
+  cout<<"No mcast flits"<<endl;
 }
+*/
+  cout << "Average hops for multicast flits : ";
+  if (total_mcast_dests > 0)
+  {
+      cout << ((float)total_mcast_hops) / (mcastcount / packet_size) << endl;
+      cout << "Total number of mcast hops is " << total_mcast_hops << endl;
+  }
+
+  else
+  {
+      cout << "No mcast flits" << endl;
+ // for unicast
+  }
+
+  if (ucount != 0)
+  {
+      uavg = ((float)usum) / ucount;
+      cout << "Average unicast transaction latency (from creating time): ";
+      cout << uavg << "(total latency = " << usum << " count = " << ucount << ")" << endl;
+  }
+  if (ucount != 0)
+  {
+
+      cout << "Max unicast transaction latency (from creating time): ";
+      cout << umax << " (fid = " << umaxid << ")" << endl;
+  }
+  if (ucount != 0)
+  {
+
+      cout << "Min unicast transaction latency (from creating time): ";
+      cout << umin << " (fid = " << uminid << ")" << endl;
+  }
+  if (ucount1 != 0)
+  {
+      uavg1 = ((float)usum1) / ucount1;
+      cout << "Average unicast transaction latency (from inject time): ";
+      cout << uavg1 << "(total latency = " << usum1 << " count = " << ucount1 << ")" << endl;
+  }
+  if (ucount1 != 0)
+  {
+
+      cout << "Max unicast transaction latency (from inject time): ";
+      cout << umax1 << " (fid = " << umaxid1 << ")" << endl;
+  }
+  if (ucount1 != 0)
+  {
+
+      cout << "Min unicast transaction latency (from inject time): ";
+      cout << umin1 << " (fid = " << uminid1 << ")" << endl;
+  }
+  //Please try fixing this in the future. This code is a hack and is wrong.
+//This is needed because for some reason when m=0, it generates one more
+//multicast packet as compared to when m>0. And for some weird reason this
+//only happens when k=16 and not when k=8
+//==================================================================//
+  if (nhubs == 0 && gK == 16)
+      non_mdnd_hops -= latest_mdnd_hop;
+  //==================================================================//
+  cout << "Number of hops without using MDND " << non_mdnd_hops << endl;
+
+  cout << "Delta = " << (1 - (float)(total_mcast_hops) / non_mdnd_hops) << endl;
+  return result ? -1 : 0;
+  }
+

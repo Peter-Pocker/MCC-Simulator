@@ -95,14 +95,28 @@ extern std::vector<std::map<int , int> > hwait_clock;
 extern std::vector<std::pair<int, int> > htime_and_cnt; 
 
 extern std::map<int, int> f_orig_ctime;
+extern std::map<int, int> f_orig_itime;
 
 extern std::map<int, int> f_diff;
+extern std::map<int, int> f_diff1;
+
+extern std::map<int, int> uf_orig_ctime;
+extern std::map<int, int> uf_orig_itime;
+
+extern std::map<int, int> uf_diff;
+extern std::map<int, int> uf_diff1;
 
 extern int total_mcast_dests;
 
 extern int total_mcast_sum;
 
 extern int total_mcast_hops;
+
+extern int total_ucast_dests;
+
+extern int total_ucast_sum;
+
+extern int total_ucast_hops;
 
 
 

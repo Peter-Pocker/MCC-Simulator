@@ -860,17 +860,38 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
         if(f->mflag && f->tail)
         {
             int diff =  f->atime - f_orig_ctime[f->oid];
+            int diff1 = f->atime - f_orig_itime[f->oid];
             // cout<<"fid "<<f->id<<" oid "<<f->oid<<" diff "<<diff<<endl;
-            if(diff > f_diff[f->oid])
+            if(diff > f_diff[f->oid])//Count the time taken by the last FLIT to arrive
             {
                 f_diff[f->oid] = diff;
+            }
+            if (diff1 > f_diff1[f->oid])//Count the time taken by the last FLIT to arrive
+            {
+                f_diff1[f->oid] = diff1;
             }
             int diff2 = f->atime - f->ctime;
             total_mcast_sum += diff2;
             total_mcast_dests ++;
             total_mcast_hops += f->hops;
-
-
+        }
+        if (!f->mflag && f->tail)
+        {
+            int udiff = f->atime - f->ctime;
+            int udiff1 = f->atime - f->itime;
+            // cout<<"fid "<<f->id<<" oid "<<f->oid<<" diff "<<diff<<endl;
+            if (udiff > uf_diff[f->id])//Count the time taken by the last FLIT to arrive
+            {
+                uf_diff[f->id] = udiff;
+            }
+            if (udiff1 > uf_diff1[f->id])//Count the time taken by the last FLIT to arrive
+            {
+                uf_diff1[f->id] = udiff1;
+            }
+            int udiff2 = f->atime - f->ctime;
+            total_ucast_sum += udiff2;
+            total_ucast_dests++;
+            total_ucast_hops += f->hops;
         }
         if (f->tail)
         {
@@ -1251,7 +1272,10 @@ void TrafficManager::_GeneratePacket(int source, int stype,
         
 
         //Flag used to inject multicast packet only at periodic intervals
-
+        if (f->tail && !_mcast_switch) {
+            uf_diff[f->id] = 0;
+            uf_diff1[f->id] = 0;
+        }
         if(_mcast_switch) {
             bool mcast_time_flag = 1;// = (GetSimTime() % _mcast_inject_time) == 0; //1;//
             if(mcast_flag && mcast_time_flag)
@@ -1272,6 +1296,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
                 {
                     f_orig_ctime[f->id] = f->ctime;
                     f_diff[f->id] = 0;
+                    f_diff1[f->id] = 0;
                     mcast_flag = false; 
                 }
                  if(f->head && f->watch || (_routers_to_watch.count(source) > 0))
@@ -1685,7 +1710,9 @@ void TrafficManager::_Step()
                                << "." << endl;
                 }
                 f->itime = _time;
-
+                if (f->tail) {
+                    f_orig_itime[f->id] = f->itime;
+                }
                 // Pass VC "back"
                 if (!_partial_packets[n][c].empty() && !f->tail)
                 {
