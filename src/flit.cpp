@@ -71,7 +71,7 @@ void Flit::Reset()
   atime     = -1 ;
   id        = -1 ;
   pid       = -1 ;
-  oid       = -1 ; // Bransan added
+  oid       = -1 ; // old fid
   hops      = 0 ;
   watch     = false ;
   record    = false ;

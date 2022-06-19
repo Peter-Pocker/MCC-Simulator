@@ -4099,11 +4099,11 @@ void IQRouter::_SWAllocUpdateMulti()
                 }
             }
             f_dup->mdest = cur_buf->GetMcastTable(vc)[output];
-
+            /*
             if (f_dup->mdest.first.size() == 1 && f_dup->mdest.second.size() == 0) {
                 f_dup->dest = f_dup->mdest.first[0];
                 f_dup->mflag = false;
-            }
+            }*/
             if (f_dup->head && f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
             {
 
