@@ -442,8 +442,8 @@ bool IQRouter::_ReceiveFlits()
       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                   << "Received flit " << f->id
-                   << " from channel at input " << input
+                   << " Received flit " << f->id
+                   << " from channel at input " << input << " vc "<<f->vc
                    << "." << endl;
       }
       _in_queue_flits.insert(make_pair(input, f));
@@ -494,9 +494,8 @@ void IQRouter::_InputQueuing()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID()   
-                 << "Adding flit " << f->id
-                 << " to VC " << vc
-                 << " at rid "<< GetID() <<" input " << input
+                 << "Adding flit " << f->id 
+                 <<" to input " << input << " VC " << vc
                  << " (state: " << VC::VCSTATE[cur_buf->GetState(vc)];
       if (cur_buf->Empty(vc))
       {
@@ -597,7 +596,7 @@ void IQRouter::_InputQueuing()
           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
           {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                  << "pushin into mcast switch alloc in input qeueing fid = " << f->id << " output pair size is "
+                  << " push into mcast switch alloc in input qeueing, fid = " << f->id << " output pair size is "
                   << Outpair.size()<<" mcast switch to do is "
                   << _sw_alloc_vcs_multi.size()<< endl;
           }
@@ -609,7 +608,7 @@ void IQRouter::_InputQueuing()
           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
           {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                  << "pushin into unicastswitch alloc input qeueing fid = " << f->id << endl;
+                  << "push into unicast switch alloc in input qeueing, fid = " << f->id << endl;
           }
 
         }
@@ -703,7 +702,7 @@ void IQRouter::_RouteEvaluate()
                  << "Beginning routing for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
-                 << "). Here is RouteEvaluate" << endl;
+                 << ")." << endl;
     }
   }
 }
@@ -889,6 +888,7 @@ void IQRouter::_VCAllocEvaluate()
               *gWatchOut << " (empty)";
             }
             *gWatchOut << "." << endl;
+
           }
         }
         else
@@ -900,7 +900,7 @@ void IQRouter::_VCAllocEvaluate()
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                          << "  VC " << out_vc
                          << " at output " << out_port
-                         << " is full." << " last pid = "<<dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
+                         << " is full." << " last pid = "<<dest_buf->_last_pid[out_vc] << " last fid = " << dest_buf->_last_id[out_vc] << endl;
             dest_buf->Display(*gWatchOut);
             reserved |= !dest_buf->IsFull();
           }
@@ -998,7 +998,7 @@ void IQRouter::_VCAllocEvaluate()
                    << "Assigning VC " << match_vc
                    << " at output " << match_output
                    << " to VC " << vc
-                   << " at input " << input
+                   << " at input " << input <<" (front fid = "<< f->id << " pid = " <<f->pid
                    << "." << endl;
       }
 
@@ -1011,7 +1011,7 @@ void IQRouter::_VCAllocEvaluate()
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                    << "VC allocation failed for VC " << vc
-                   << " at input " << input
+                   << " at input " << input << " (front fid = " << f->id << " pid = " << f->pid
                    << "." << endl;
       }
 
@@ -1131,7 +1131,7 @@ void IQRouter::_VCAllocUpdate()
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                  << "Completed VC allocation for VC " << vc
                  << " at input " << input
-                 << " (front: " << f->id
+                 << " (front fid= " << f->id << " pid= " << f->pid
                  << ")." << endl;
     }
 
@@ -1149,7 +1149,7 @@ void IQRouter::_VCAllocUpdate()
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                    << "  Acquiring assigned VC " << match_vc
-                   << " at output " << match_output
+                   << " at output " << match_output << " for fid= " << f->id << " pid= " << f->pid
                    << "." << endl;
       }
 
@@ -1469,7 +1469,7 @@ void IQRouter::_SWHoldUpdate()
                 {
                     *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " << GetID()
                         << "  flit " << nf->id
-                        << " will be sent to mcast routing in switchholdupdate " << endl;
+                        << " will be mcast-routed in switch hold update " << endl;
                 }
             }
             
@@ -1480,7 +1480,7 @@ void IQRouter::_SWHoldUpdate()
                 {
                     *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " << GetID()
                         << "  flit " << nf->id
-                        << " will be sent to unicast routing in " << endl;
+                        << " will be unicast-routed in " << endl;
                 }
             }
           }
@@ -1707,7 +1707,7 @@ void IQRouter::_SWAllocEvaluate()
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
                  << "Beginning switch allocation for VC " << vc
                  << " at input " << input
-                 << " (front: " << f->id
+                 << " (front fid: " << f->id << " pid = "<<f->pid 
                  << ")." << endl;
     }
 
@@ -2555,7 +2555,7 @@ void IQRouter::_SWAllocUpdate()
                   {
                       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " << GetID()
                           << "  flit " << nf->id
-                          << " will be sent to mcast routing in switchholdupdate " << endl;
+                          << " will be sent to mcast routing in switch hold update " << endl;
                   }
               }
 
@@ -3214,7 +3214,7 @@ void IQRouter::_VCAllocUpdateMulti()
         .push_back(make_pair(-1, make_pair(make_pair(item.second.first,output_and_vc), -1)));
       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
       {
-          *gWatchOut << "pushin into switch alloc vcalloc"<<f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+          *gWatchOut << "push into switch alloc vc_alloc"<<f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
       }
         // cout<<"pushin into switch alloc vcalloc"<<f->id<<endl;
       }
@@ -4437,7 +4437,7 @@ void IQRouter::_SWAllocUpdateMulti()
         _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first, -1)));
         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         {
-            *gWatchOut << "pushin into switch alloc swallocupdate if output not got" << f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+            *gWatchOut << "push into switch alloc sw_alloc_update if output not got" << f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
         }
 }
         _sw_alloc_vcs_multi.pop_front();

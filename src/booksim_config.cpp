@@ -105,7 +105,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("spec_sw_allocator", "prio");
   
   _int_map["received_queue_size"]  = 32; //Recieved queue size  
-  _int_map["num_vcs"]         = 16;  
+  _int_map["num_vcs"]         = 32;  
   _int_map["vc_buf_size"]     = 8;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
   AddStrField("buffer_policy", "private"); //buffer sharing policy
@@ -165,11 +165,11 @@ BookSimConfig::BookSimConfig( )
   _int_map["perm_seed"] = 0; // seed value for random permuation trafficpattern generator
   AddStrField("perm_seed", ""); // workaround to allow special "time" value
 
-  _float_map["injection_rate"]       = 0.1;
+  _float_map["injection_rate"]       = 0.2;
   AddStrField("injection_rate", ""); // workaraound to allow for vector specification
   
   //bransan added
-  _float_map["mcast_injection_rate"]       = 0.02;
+  _float_map["mcast_injection_rate"]       = 0.3;
   AddStrField("mcast_injection_rate", ""); 
 
   //bransan added
@@ -181,7 +181,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("mcast_switch", ""); 
 
   //bransan added
-  _int_map["num_mcast_dests"]       = 4;
+  _int_map["num_mcast_dests"]       = 2;
   AddStrField("num_mcast_dests", ""); 
 
   _int_map["injection_rate_uses_flits"] = 0;
@@ -297,8 +297,8 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_file", "test");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "{49004,49005}");
-  AddStrField("watch_routers", "{20}");
+  AddStrField("watch_flits", "");
+  AddStrField("watch_routers", "");
   AddStrField("watch_transactions", "");
 
   AddStrField("watch_out", "test");
