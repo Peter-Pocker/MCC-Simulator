@@ -949,7 +949,7 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
 
             // Only record statistics once per packet (at tail)
             // and based on the simulation state
-            if ((_sim_state == warming_up) || f->record)
+            if ( f->record)
             {
 
                 _hop_stats[f->cl]->AddSample(f->hops);
@@ -1961,7 +1961,7 @@ void TrafficManager::_DisplayRemaining(ostream &os) const
         os << "(" << _measured_in_flight_flits[c].size() << " flits)" << endl;
     }
 }
-
+/*
 bool TrafficManager::_SingleSim()
 {
     int converged = 0;
@@ -2192,7 +2192,7 @@ bool TrafficManager::_SingleSim()
 
     return (converged > 0);
 }
-
+*/
 bool TrafficManager::Run()
 {
     for (int sim = 0; sim < _total_sims; ++sim)
@@ -2222,25 +2222,30 @@ bool TrafficManager::Run()
         // reset stats, all packets after warmup_time marked
         // converge
         // draing, wait until all packets finish
-        _sim_state = warming_up;
+        //_sim_state = warming_up;
 
         _ClearStats();
-
+        _sim_state = running;
         for (int c = 0; c < _classes; ++c)
         {
             _traffic_pattern[c]->reset();
             _injection_process[c]->reset();
         }
 
-        if (!_SingleSim())
+        if (!stop)
         {
-            cout << "Simulation unstable, ending ..." << endl;
-            return false;
+            _Step();
+            if (_time > 300)
+                stop = true;
         }
 
+        UpdateStats();
+        DisplayStats();
+        _sim_state = draining;
         // Empty any remaining packets
         cout << "Draining remaining packets ..." << endl;
         // cout<<"Time after the first step()"<<GetSimTime()<<endl;
+        _drain_time = _time;
         _empty_network = true;
         int empty_steps = 0;
 

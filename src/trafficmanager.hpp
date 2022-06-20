@@ -60,8 +60,12 @@ protected:
   int _nodes;
   int _routers;
   int _vcs;
+  //added by Jingwei
+  bool stop;
+  
   //Bransan added num of hubs
   int _nhubs;
+ 
 
   vector<Network *> _net;
   vector<vector<Router *> > _router;
@@ -287,7 +291,7 @@ protected:
 
   void _ComputeStats( const vector<int> & stats, int *sum, int *min = NULL, int *max = NULL, int *min_pos = NULL, int *max_pos = NULL ) const;
 
-  virtual bool _SingleSim( );
+  //virtual bool _SingleSim( );
 
   void _DisplayRemaining( ostream & os = cout ) const;
   
