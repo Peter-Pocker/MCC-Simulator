@@ -2197,7 +2197,7 @@ bool TrafficManager::Run()
 {
     for (int sim = 0; sim < _total_sims; ++sim)
     {
-
+        stop = false;
         _time = 0;
         //Bransan uncertain if needs change or no
         //remove any pending request from the previous simulations
