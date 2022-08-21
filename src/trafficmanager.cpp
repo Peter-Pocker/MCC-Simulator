@@ -2232,7 +2232,7 @@ bool TrafficManager::Run()
             _injection_process[c]->reset();
         }
 
-        if (!stop)
+        while (!stop)
         {
             _Step();
             if (_time > 300)

@@ -60,9 +60,9 @@ public:
   bool head;
   bool tail;
   
-  int  ctime;
-  int  itime;
-  int  atime;
+  int  ctime;//create time
+  int  itime;//inject time
+  int  atime;//arrival time
 
   int  id;
   int  pid;
