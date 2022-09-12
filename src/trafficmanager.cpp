@@ -42,6 +42,7 @@
 #include "packet_reply_info.hpp"
 // #include <random>
 #include <algorithm>
+#include "json.hpp"
 
 TrafficManager *TrafficManager::New(Configuration const &config,
                                     vector<Network *> const &net)

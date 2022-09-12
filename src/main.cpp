@@ -387,7 +387,7 @@ int main( int argc, char **argv )
       ucount1++;
       
   }
-  cout << " ucount = " << ucount << " ucount1 =" << ucount1;
+ // cout << " ucount = " << ucount << " ucount1 =" << ucount1;
   if(count != 0)
   {
     avg = ((float)sum)/count;
