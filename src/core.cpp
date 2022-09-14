@@ -35,77 +35,79 @@
  */
 
 #include "booksim.hpp"
-#include "flit.hpp"
+#include "core.hpp"
 
-stack<Flit *> Flit::_all;
-stack<Flit *> Flit::_free;
 
-ostream& operator<<( ostream& os, const Flit& f )
+Core::Core(const Configuration& config, int id, const nlohmann::json &j)
+{  
+   _core_id = id;
+   _j[to_string(id)] = j[to_string(id)];
+   _cur_wl_id = _j[to_string(id)][0]["id"];
+   _cur_id = 0;
+   _buffer_update();
+   _dataready = _data_ready();
+
+
+}  
+
+void Core::_update()
 {
-  os << "  Flit ID: " << f.id << " (" << &f << ")" 
-     << " Packet ID: " << f.pid
-     << " Type: " << f.type 
-     << " Head: " << f.head
-     << " Tail: " << f.tail << endl;
-  os << "  Source: " << f.src << "  Dest: " << f.dest << " Intm: "<<f.intm<<endl;
-  os << "  Creation time: " << f.ctime << " Injection time: " << f.itime << " Arrival time: " << f.atime << " Phase: "<<f.ph<< endl;
-  os << "  VC: " << f.vc << endl;
-  return os;
+	_cur_id = _cur_id + 1;
+	_cur_wl_id = _j[_core_id][_cur_id]["id"];
+	_buffer_update();
+	_dataready = _data_ready();
+
 }
+Flit* send_requirement() {
 
-Flit::Flit() 
-{  
-  Reset();
-}  
-
-void Flit::Reset() 
-{  
-  type      = ANY_TYPE ;
-  vc        = -1 ;
-  cl        = -1 ;
-  head      = false ;
-  tail      = false ;
-  dropped   = false ; // Bransan added 
-  ctime     = -1 ;
-  itime     = -1 ;
-  atime     = -1 ;
-  id        = -1 ;
-  pid       = -1 ;
-  oid       = -1 ; // old fid
-  hops      = 0 ;
-  watch     = false ;
-  record    = false ;
-  intm = 0;
-  src = -1;
-  dest = -1;
-  pri = 0;
-  intm =-1;
-  ph = -1;
-  data = 0;
-  inter_dest = -1; // Bransan added
-  mflag = false;
-}  
-
-Flit * Flit::New() {
-  Flit * f;
-  if(_free.empty()) {
-    f = new Flit;
-    _all.push(f);
-  } else {
-    f = _free.top();
-    f->Reset();
-    _free.pop();
-  }
-  return f;
 }
-
-void Flit::Free() {
-  _free.push(this);
+void Core::_buffer_update()
+{
+	for (auto x : _j[_core_id][_cur_id]["buffer"]) {
+		if (x["new_added"] == true) {
+			for (auto y : x["transfer_id"])
+				_rq_to_sent.insert(y);
+		}
+	}
 }
-
-void Flit::FreeAll() {
-  while(!_all.empty()) {
-    delete _all.top();
-    _all.pop();
-  }
+//when a new workload comes, we check which data has not been in buffer and construct _left_data.
+bool Core::_data_ready()
+{
+	_left_data.clear();
+	bool temp = true;
+	if (_core_buffer.count(_j[_core_id][_cur_id]["layer_name"]) != 0) {
+		for (auto x : _j[_core_id][_cur_id]["ifmap"]["transfer_id"]) {
+			if (_core_buffer[_j[_core_id][_cur_id]["layer_name"]].count(x) != 0)
+				continue;
+			else {
+				_left_data.insert(x);
+				temp = false;
+			}
+		}
+		if (_j[_core_id][_cur_id].count("weight") != 0) {
+			for (auto x : _j[_core_id][_cur_id]["weight"]["transfer_id"]) {
+				if (_core_buffer[_j[_core_id][_cur_id]["layer_name"]].count(x) != 0)
+					continue;
+				else {
+					_left_data.insert(x);
+					temp = false;
+				}
+			}
+		}
+	}
+	else {
+		for (auto x : _j[_core_id][_cur_id]["ifmap"]["transfer_id"]) {
+				_left_data.insert(x);
+				temp = false;
+		}
+		if (_j[_core_id][_cur_id].count("weight") != 0) {
+			for (auto x : _j[_core_id][_cur_id]["weight"]["transfer_id"]) {
+					_left_data.insert(x);
+					temp = false;
+			}
+		}
+	}
+	return temp;
+	
+		
 }
