@@ -35,18 +35,21 @@
 #include <list>
 #include <map>
 #include <set>
+#include <unordered_set>
 #include <cassert>
+
 
 #include "booksim.hpp"
 #include "config_utils.hpp"
 #include "flit.hpp"
+#include "json.hpp"
 using namespace std;
 
 class Core {
 
 public:
 
-vector<Flit*> *send_data();
+vector<Flit*> send_data();
 Flit* send_requirement();
 void receive_requirement(Flit* re);
 void receive_data(Flit* f);
@@ -54,10 +57,27 @@ void receive_data(Flit* f);
 
 private:
 
-  Core(const Configuration& config, int id );
+  Core(const Configuration& config, int id , const nlohmann::json& j);
   ~Core() {};
-  void update();
-
+  void _update();
+  void _buffer_update();
+  bool _data_ready();
+  nlohmann::json _j;
+  int _core_id;
+  int _cur_wl_id; // id of current wl
+  int _cur_id; //order of current wl
+  bool _dataready;  //whether all data of this workload is ready
+ // std::unordered_map<int,int> wl_map;
+  //for loading data (double ckeck)
+  unordered_set<int> _rq_to_sent;//transfer_id
+  unordered_map<int, bool> _s_rq_list;//sent_request;int is id, bool is set to true when receiving the message of tail
+  unordered_map<int, int>_r_data_list;//receive_data_size;Each entry is decremented and should end up at 0
+  //for sending data
+  unordered_map<int, unordered_set<int>> _r_rq_list;//received_request,first int is transfer_id£¬set is core list.(unicast has 1 entry, multicast has multiple entry)
+  unordered_map<int, int> _s_data_list;//sending_data; no need to distinguish unicast and multicast
+  //for buffer record
+  unordered_map<string, unordered_set<int>> _core_buffer;//layername,corresponding transfer
+  unordered_set<int>_left_data;
 };
 
 //ostream& operator<<( ostream& os, const Flit& f );

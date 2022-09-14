@@ -47,6 +47,20 @@ BookSimConfig::BookSimConfig( )
   // Physical sub-networks
   _int_map["subnets"] = 1;
 
+
+  //DDR configuration
+  _int_map["DDR_lanes"] = 32;
+  _int_map["DDR_fq"] = 16; //frequency / gbps
+  _int_map["core_fq"] = 1; //frequency / gbps
+  _int_map["DDR_numbers"] = 4;
+  AddStrField("DDR_routers", "0,1,2,3,20,21,22,23");//the whole column (for the time being); others are cores.
+  AddStrField("DDR_il_gp", "1"); // interleave_group; no more than DDR numbers
+  //To which cores does each DDR connect
+  AddStrField("DDR_1", "1,2");
+  AddStrField("DDR_2", "21,22");
+  //AddStrField("DDR_3", "57");
+  //AddStrField("DDR_4", "62");
+
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
   _int_map["k"] = 8; //network radix
@@ -64,6 +78,9 @@ BookSimConfig::BookSimConfig( )
   _int_map["y"] = 8; //number of routers in Y
   _int_map["xr"] = 1; //number of nodes per router in X only if c>1
   _int_map["yr"] = 1; //number of nodes per router in Y only if c>1
+
+
+
 
 
   _int_map["link_failures"] = 0; //legacy
