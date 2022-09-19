@@ -57,7 +57,7 @@ public:
 
   int vc;
 
-  int type;//5 is request, 6 is data
+  int nn_type;//5 is request, 6 is data
 
   int cl;
 

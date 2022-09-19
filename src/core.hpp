@@ -48,6 +48,8 @@ using namespace std;
 class Core {
 
 public:
+vector<Flit*> run();
+
 
 vector<Flit*> send_data();
 Flit* send_requirement();
@@ -77,6 +79,11 @@ private:
   //for buffer record
   unordered_map<string, unordered_set<int>> _core_buffer;//layername,corresponding transfer
   unordered_set<int>_left_data;
+
+  // signal
+  bool _wl_fn;//workload finish
+  bool _all_fn;//all workload finsh
+
 };
 
 //ostream& operator<<( ostream& os, const Flit& f );

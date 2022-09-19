@@ -52,6 +52,8 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _cur_id = 0;
    _buffer_update();
    _dataready = _data_ready();
+   _wl_fn = false;
+   _all_fn = false;
 
 
 }  
@@ -65,7 +67,23 @@ void Core::_update()
 
 }
 
-void Core::receive_message(Flit* f) {
+vector<Flit*> Core::run() {
+	vector<Flit*> flits_to_send;
+//	receive_message(f);
+
+	if (_wl_fn) {
+		_buffer_update();
+		for (auto& p : _rq_to_sent) {
+			Flit* f = Flit::New();
+			f->nn_type = 5;
+			f->dest = _s_rq_list[p][0];
+			f->size = _s_rq_list[p][1];
+			f->tail = true;
+			f->head = true;
+			f->transfer_id = p;
+			flits_to_send.push_back(f);
+		}
+	}
 }
 
 void Core::receive_message(Flit*f) {
