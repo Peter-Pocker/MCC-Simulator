@@ -75,6 +75,9 @@ void Flit::Reset()
   hops      = 0 ;
   watch     = false ;
   record    = false ;
+  end = false;
+  size = -1;
+  transfer_id = -1;
   intm = 0;
   src = -1;
   dest = -1;
@@ -84,6 +87,7 @@ void Flit::Reset()
   data = 0;
   inter_dest = -1; // Bransan added
   mflag = false;
+  layer_name = "";
 }  
 
 Flit * Flit::New() {

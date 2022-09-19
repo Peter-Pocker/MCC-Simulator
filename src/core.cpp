@@ -34,6 +34,12 @@
  *When adding objects make sure to set a default value in this constructor
  */
 
+
+/*
+todo:
+1¡¢if a multicast has multiple entries with the same detination. only recod one.
+
+*/
 #include "booksim.hpp"
 #include "core.hpp"
 
@@ -58,15 +64,40 @@ void Core::_update()
 	_dataready = _data_ready();
 
 }
-Flit* send_requirement() {
+
+void Core::receive_message(Flit* f) {
+}
+
+void Core::receive_message(Flit*f) {
+	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
+	if (f->type == 5) {
+		_r_rq_list[f->transfer_id].insert(f->src);
+	}
+	if (f->type == 6) {
+		_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - f->size;
+	}
+	if (f->type == 6 && f->end) {
+		_core_buffer[f->layer_name].insert(f->transfer_id);
+		assert(_s_rq_list[f->transfer_id][2] = 0);
+	}
+	
 
 }
 void Core::_buffer_update()
 {
-	for (auto x : _j[_core_id][_cur_id]["buffer"]) {
-		if (x["new_added"] == true) {
-			for (auto y : x["transfer_id"])
-				_rq_to_sent.insert(y);
+	for (auto& x : _j[_core_id][_cur_id]["buffer"]) {
+		if (x["new_added"].get<bool>() == true) {
+			for (auto &y : x["source"]) {
+				if (y["type"].get<string>().compare("DRAM") != 0) {
+					_rq_to_sent.insert(y.get<int>());
+					_s_rq_list[y.get<int>()].push_back(y["id"].get<int>());	
+				}
+				else {
+					_s_rq_list[y.get<int>()].push_back(-1);
+				}
+				_s_rq_list[y.get<int>()].push_back(y["size"].get<int>());
+				_s_rq_list[y.get<int>()].push_back(0);
+			}
 		}
 	}
 }
@@ -75,34 +106,34 @@ bool Core::_data_ready()
 {
 	_left_data.clear();
 	bool temp = true;
-	if (_core_buffer.count(_j[_core_id][_cur_id]["layer_name"]) != 0) {
-		for (auto x : _j[_core_id][_cur_id]["ifmap"]["transfer_id"]) {
-			if (_core_buffer[_j[_core_id][_cur_id]["layer_name"]].count(x) != 0)
+	if (_core_buffer.count(_j[_core_id][_cur_id]["layer_name"].get<string>()) != 0) {
+		for (auto& x : _j[_core_id][_cur_id]["ifmap"]["transfer_id"]) {
+			if (_core_buffer[_j[_core_id][_cur_id]["layer_name"].get<string>()].count(x.get<int>()) != 0)
 				continue;
 			else {
-				_left_data.insert(x);
+				_left_data.insert(x.get<int>());
 				temp = false;
 			}
 		}
 		if (_j[_core_id][_cur_id].count("weight") != 0) {
-			for (auto x : _j[_core_id][_cur_id]["weight"]["transfer_id"]) {
-				if (_core_buffer[_j[_core_id][_cur_id]["layer_name"]].count(x) != 0)
+			for (auto& x : _j[_core_id][_cur_id]["weight"]["transfer_id"]) {
+				if (_core_buffer[_j[_core_id][_cur_id]["layer_name"].get<string>()].count(x.get<int>()) != 0)
 					continue;
 				else {
-					_left_data.insert(x);
+					_left_data.insert(x.get<int>());
 					temp = false;
 				}
 			}
 		}
 	}
 	else {
-		for (auto x : _j[_core_id][_cur_id]["ifmap"]["transfer_id"]) {
-				_left_data.insert(x);
+		for (auto& x : _j[_core_id][_cur_id]["ifmap"]["transfer_id"]) {
+				_left_data.insert(x.get<int>());
 				temp = false;
 		}
 		if (_j[_core_id][_cur_id].count("weight") != 0) {
-			for (auto x : _j[_core_id][_cur_id]["weight"]["transfer_id"]) {
-					_left_data.insert(x);
+			for (auto& x : _j[_core_id][_cur_id]["weight"]["transfer_id"]) {
+					_left_data.insert(x.get<int>());
 					temp = false;
 			}
 		}

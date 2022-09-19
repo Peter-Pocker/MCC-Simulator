@@ -45,15 +45,19 @@ public:
 
   bool mflag;
 
-  const static int NUM_FLIT_TYPES = 5;
-  enum FlitType { READ_REQUEST  = 0, 
+  const static int NUM_FLIT_TYPES = 7;
+  enum FlitType { READ_REQUEST  = 0, //5,6 ARE FOR DNN ACCELERATORS
 		  READ_REPLY    = 1,
 		  WRITE_REQUEST = 2,
 		  WRITE_REPLY   = 3,
-                  ANY_TYPE      = 4 };
+                  ANY_TYPE      = 4, 
+          REQUEST = 5,
+          DATA = 6};
   FlitType type;
 
   int vc;
+
+  int type;//5 is request, 6 is data
 
   int cl;
 
@@ -67,11 +71,16 @@ public:
   int  id;
   int  pid;
   int  oid; //Bransan added to calculate transaction time for multicast
+  int  transfer_id;
+  bool end;//for data, record whether this packet is the end of the whole transfer.
+  string layer_name;
 
   bool record;
 
   int  src;
   int  dest;
+
+  int size;// record the size of the packet to transfer
 
   int  pri;
   int  hops;
