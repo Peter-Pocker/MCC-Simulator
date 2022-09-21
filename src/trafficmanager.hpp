@@ -43,7 +43,8 @@
 #include "routefunc.hpp"
 #include "outputset.hpp"
 #include "injection.hpp"
-
+#include "Core.hpp"
+#include "json.hpp"
 
 //register the requests to a node
 class PacketReplyInfo;
@@ -70,6 +71,7 @@ protected:
   vector<Network *> _net;
   vector<vector<Router *> > _router;
   vector<vector<Hub *> > _hub; //Bransan added vector for hubs
+  vector<Core*> _core;
   
 
   // ============ Traffic ============ 

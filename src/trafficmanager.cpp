@@ -42,8 +42,8 @@
 #include "packet_reply_info.hpp"
 // #include <random>
 #include <algorithm>
-#include "json.hpp"
 
+using json = nlohmann::json;
 TrafficManager *TrafficManager::New(Configuration const &config,
                                     vector<Network *> const &net)
 {
@@ -379,7 +379,11 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _router[i] = _net[i]->GetRouters();
         _hub[i] = _net[i]->GetHubs();
     }
-
+    json j;
+    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\IR.json") >> j;
+    for (int i = 0; i < _nodes; i++) {
+        _core[i] = new Core(config, i, j);
+    }
     //seed the network
     int seed;
     if (config.GetStr("seed") == "time")
@@ -732,6 +736,9 @@ TrafficManager::~TrafficManager()
         {
             delete _buf_states[source][subnet];
         }
+    }
+    for (int i = 0; i < _nodes; i++) {
+        delete _core[i];
     }
 
     for (int c = 0; c < _classes; ++c)
@@ -1335,32 +1342,19 @@ void TrafficManager::_GeneratePacket(int source, int stype,
 
 void TrafficManager::_Inject()
 {   
-    //mcast_flag = true; //Allows single injection of a mcast packet in an given time
-    //vector<int> inputs;
-    //vector<int> rand_inputs;
-    //for(int i = 0; i<_nodes; i++)
-    //{
-     //   inputs.push_back(i);
-    //}
-    //srand(GetSimTime());
-    //for(int i = 0; i<_nodes; i++)
-    //{
-    //    int val = inputs[rand()%(inputs.size()) ];
-    //    inputs.erase(find(inputs.begin(), inputs.end(), val));
-    //    rand_inputs.push_back(val);
-    //}
+
     Flit::FlitType packet_type = Flit::ANY_TYPE;
     for (int i = 0; i < _nodes; ++i)
     {
         //int input = rand_inputs[i];
         for (int c = 0; c < _classes; ++c)
         {
-            vector<Flit*> flits = cores[i]->run();
+            vector<Flit*> flits = _core[i]->run(_time, _partial_packets[i][c].empty());
             int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;
             if (!flits.empty()) {
                 int pid = 0;
                 bool record = false;
-                bool watch;
+                bool watch = false;
                 for (auto& f : flits) {
                     if (f->head) {
                         pid = _cur_pid++;
@@ -1381,7 +1375,7 @@ void TrafficManager::_Inject()
                     f->subnetwork = 0;
                     _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
                     if ((_sim_state == running) ||
-                        ((_sim_state == draining) && (time < _drain_time)))
+                        ((_sim_state == draining) && (_time < _drain_time)))
                     {
                         record = _measure_stats[c];
                     }
@@ -1429,7 +1423,6 @@ void TrafficManager::_Inject()
                             f_orig_ctime[f->id] = f->ctime;
                             f_diff[f->id] = 0;
                             f_diff1[f->id] = 0;
-                            mcast_flag = false;
                         }
                         if (f->head && f->watch || (_routers_to_watch.count(i) > 0))
                         {
@@ -1849,7 +1842,7 @@ void TrafficManager::_Step()
 #ifdef TRACK_FLOWS
                 ++_ejected_flits[f->cl][n];
 #endif
-                _cores[n]->receive_message(f);
+                _core[n]->receive_message(f);
                 _RetireFlit(f, n);
             
             }

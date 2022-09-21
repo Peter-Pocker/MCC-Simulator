@@ -37,8 +37,14 @@
 
 /*
 todo:
-1¡¢if a multicast has multiple entries with the same detination. only recod one.
+1.if a multicast has multiple entries with the same detination. only recod one.
+2.all vector should be initialize size
+*/
 
+/*
+* 1.send requirements need add DDR process
+* 2.send data also need DDR process
+* 3.add DDR placement logic
 */
 #include "booksim.hpp"
 #include "core.hpp"
@@ -46,33 +52,69 @@ todo:
 
 Core::Core(const Configuration& config, int id, const nlohmann::json &j)
 {  
+   _num_obuf = config.GetInt("num_obuf");
+   _num_flits= config.GetInt("packet_size");
    _core_id = id;
    _j[to_string(id)] = j[to_string(id)];
    _cur_wl_id = _j[to_string(id)][0]["id"];
    _cur_id = 0;
+   _start_wl_time = -1;
+   _start_tile_time = -1;
+   _end_tile_time = -1;
+   _cp_time = _j[_core_id][_cur_id]["time"];
+   _sd_gran = config.GetInt("sending_granularity");
    _buffer_update();
-   _dataready = _data_ready();
-   _wl_fn = false;
+   _dataready = _left_data.empty() && _data_ready();
+   _wl_fn = true;//the first workload can be viewed as a workload after a virtual previous one.
    _all_fn = false;
-
-
+   _running = false;
+   o_buf.resize(_num_obuf);
+   _cur_rc_obuf=-1;
+   _cur_sd_obuf=-1;
 }  
 
 void Core::_update()
 {
 	_cur_id = _cur_id + 1;
 	_cur_wl_id = _j[_core_id][_cur_id]["id"];
+	_cp_time = _j[_core_id][_cur_id]["time"];
 	_buffer_update();
-	_dataready = _data_ready();
+	_dataready = _left_data.empty() &&_data_ready();
 
 }
 
-vector<Flit*> Core::run() {
-	vector<Flit*> flits_to_send;
+list<Flit*> Core::run(int time, bool empty) {
 //	receive_message(f);
+	_flits_sending.clear();
+	if (_wl_fn && _dataready && _test_obuf()) {
+		_running = true;
+		_wl_fn = false;
+		_dataready = false;
+		_start_wl_time = time;
+		_start_tile_time = time;
+		_end_tile_time = _start_tile_time + _cp_time / _sd_gran; //neglect non-integer part
+		_generate_next_obuf_id();
+	}
+	if (_running) {
+		if (_time == _end_tile_time) {
+			_write_obuf();
+			_generate_next_obuf_id();
+			if (_cur_rc_obuf != -1) {
+				_start_tile_time = _time + 1;
+				_end_tile_time = _time + _cp_time / _sd_gran;
+			}
+		}
+		if (_cur_rc_obuf == -1)
+		{
+			_generate_next_obuf_id();
+		}
+
+	}
+
 
 	if (_wl_fn) {
-		_buffer_update();
+		_running = false;
+		_update();
 		for (auto& p : _rq_to_sent) {
 			Flit* f = Flit::New();
 			f->nn_type = 5;
@@ -81,26 +123,53 @@ vector<Flit*> Core::run() {
 			f->tail = true;
 			f->head = true;
 			f->transfer_id = p;
-			flits_to_send.push_back(f);
+			_requirements_to_send.push_back(f);
 		}
 	}
+	//data sending part (connect router)
+	bool finish = false;
+	if (!_requirements_to_send.empty() && empty) {
+		do {
+			assert(_requirements_to_send.front()->head);
+			_flits_sending.push_back(_requirements_to_send.front());
+			finish = _requirements_to_send.front()->tail;
+			_requirements_to_send.pop_front();
+			
+		} while (finish);
+	}
+	else if (_requirements_to_send.empty() && !o_buf[_cur_sd_obuf].empty() && empty) {
+		do {
+			assert(_data_to_send.front()->head);
+			_flits_sending.push_back(_data_to_send.front());
+			finish = _data_to_send.front()->tail;
+			_data_to_send.pop_front();
+			
+		} while (finish);
+	}
+	return _flits_sending;
+}
+
+void Core::_compute() {
+	
 }
 
 void Core::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
-	if (f->type == 5) {
+	if (f->nn_type == 5) {
 		_r_rq_list[f->transfer_id].insert(f->src);
 	}
-	if (f->type == 6) {
+	if (f->nn_type == 6) {
 		_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - f->size;
 	}
-	if (f->type == 6 && f->end) {
+	if (f->nn_type == 6 && f->end) {
 		_core_buffer[f->layer_name].insert(f->transfer_id);
 		assert(_s_rq_list[f->transfer_id][2] = 0);
+		_left_data.erase(f->transfer_id);
 	}
 	
 
 }
+//todo delete out-of-date data
 void Core::_buffer_update()
 {
 	for (auto& x : _j[_core_id][_cur_id]["buffer"]) {
@@ -160,3 +229,26 @@ bool Core::_data_ready()
 	
 		
 }
+
+bool Core::_test_obuf() {
+	bool temp=false;
+	for (auto& p : o_buf) {
+		temp = temp || p.empty();
+	}
+	return temp;
+}
+
+void Core::_generate_next_obuf_id() {
+	for (int i = 0; i < _num_obuf; i++) {
+		if (o_buf[i].empty()) {
+			_cur_rc_obuf = i;
+			return;
+		}
+	}
+	_cur_rc_obuf = -1;
+}
+
+void Core::_write_obuf() {
+	
+}
+

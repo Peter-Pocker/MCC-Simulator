@@ -61,9 +61,14 @@ BookSimConfig::BookSimConfig( )
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
 
+  //Core configuration
+  _int_map["num_obuf"] = 2;
+  _int_map["flit_width"] = 512;
+  _int_map["sending_granularity"] = 10;//output sending granularity
+
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
-  _int_map["k"] = 8; //network radix
+  _int_map["k"] = 8; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 0; // Bransan number of wireless routers

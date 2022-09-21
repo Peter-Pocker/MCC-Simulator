@@ -48,26 +48,43 @@ using namespace std;
 class Core {
 
 public:
-vector<Flit*> run();
+list<Flit*> run(int time,bool empty);
 
 
 vector<Flit*> send_data();
-Flit* send_requirement();
+//Flit* send_requirement();
 void receive_message(Flit*f);
-
-
+Core(const Configuration& config, int id, const nlohmann::json& j);
+~Core() {};
 private:
 
-  Core(const Configuration& config, int id , const nlohmann::json& j);
-  ~Core() {};
   void _update();
   void _buffer_update();
   bool _data_ready();
+  bool _test_obuf();//to test whether there is an empty obuf;
+  void _compute();
+  void _generate_next_obuf_id();
+  void _write_obuf();
   nlohmann::json _j;
   int _core_id;
   int _cur_wl_id; // id of current wl
   int _cur_id; //order of current wl
   bool _dataready;  //whether all data of this workload is ready
+  int _cp_time;//compute time of current workload
+  bool _running;//the state of the core, true is on compute, false is stalling (1. data is not in place 2. no output buffer)
+  int _num_obuf;//number of output buffer, get from config
+  int _num_flits;//number of flits per packet at most;
+  int _flit_width;//line width, default 1g hz frequency.
+  int _start_wl_time;//starting time of the current workload
+  int _start_tile_time; //starting time of the current tile
+  int _end_tile_time; //ending time of the current tile
+  int _time;
+  int _sd_gran;//sending granularity of obuf
+  int _cur_rc_obuf;// the obuf which recieves data;
+  int _cur_sd_obuf;// the obuf which sends data;
+  list<Flit*> _requirements_to_send;//internal partial packets
+  list<Flit*> _data_to_send;//internal partial packets
+  list<Flit*> _flits_sending;//output for partial packets
  // std::unordered_map<int,int> wl_map;
   //for loading data (double ckeck)
   unordered_set<int> _rq_to_sent;//transfer_id
@@ -75,10 +92,12 @@ private:
  // unordered_map<int, int>_r_data_list;//receive_data_size;Each entry is decremented and should end up at 0
   //for sending data
   unordered_map<int, unordered_set<int>> _r_rq_list;//received_request,first int is transfer_id£¬set is core list.(unicast has 1 entry, multicast has multiple entry)
-  unordered_map<int, int> _s_data_list;//sending_data; no need to distinguish unicast and multicast
+  //unordered_map<int, int> _s_data_list;//sending_data; no need to distinguish unicast and multicast
   //for buffer record
   unordered_map<string, unordered_set<int>> _core_buffer;//layername,corresponding transfer
   unordered_set<int>_left_data;
+  vector<unordered_map<int, vector<int>>> o_buf;//each entry of vector is an output_buffer
+  //<transfer_id,vector<destination,size>>
 
   // signal
   bool _wl_fn;//workload finish
