@@ -72,7 +72,7 @@ protected:
   vector<vector<Router *> > _router;
   vector<vector<Hub *> > _hub; //Bransan added vector for hubs
   vector<Core*> _core;
-  
+  unordered_set<int>core_id;
 
   // ============ Traffic ============ 
 

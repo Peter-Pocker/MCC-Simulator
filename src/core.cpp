@@ -54,30 +54,70 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
 {  
    _num_obuf = config.GetInt("num_obuf");
    _num_flits= config.GetInt("packet_size");
+   _flit_width = config.GetInt("flit_width");
+   _interleave = config.GetInt("interleave")==1 ? true : false;
+   _ddr_num = config.GetInt("DDR_num");
+   _ddr_id = config.GetIntArray("DDR_routers");
+   _sd_gran = config.GetInt("sending_granularity");
+   _sd_gran_lb= config.GetInt("sending_granularity_lowerbound");
    _core_id = id;
    _j[to_string(id)] = j[to_string(id)];
-   _cur_wl_id = _j[to_string(id)][0]["id"];
-   _cur_id = 0;
+   _cur_wl_id = -1;
+   _cur_id = -1;
    _start_wl_time = -1;
    _start_tile_time = -1;
    _end_tile_time = -1;
-   _cp_time = _j[_core_id][_cur_id]["time"];
-   _sd_gran = config.GetInt("sending_granularity");
-   _buffer_update();
-   _dataready = _left_data.empty() && _data_ready();
+   _cp_time = -1;
+   _dataready =false;
    _wl_fn = true;//the first workload can be viewed as a workload after a virtual previous one.
    _all_fn = false;
    _running = false;
    o_buf.resize(_num_obuf);
    _cur_rc_obuf=-1;
    _cur_sd_obuf=-1;
+   _mcast_ddr_rid = 0;
+   _ucast_ddr_rid.assign(4,0);
+   _ddr_rnum = _ddr_id.size() / _ddr_num;
 }  
 
 void Core::_update()
 {
 	_cur_id = _cur_id + 1;
-	_cur_wl_id = _j[_core_id][_cur_id]["id"];
-	_cp_time = _j[_core_id][_cur_id]["time"];
+	_cur_wl_id = _j[_core_id][_cur_id]["id"].get<int>();
+	_cp_time = _j[_core_id][_cur_id]["time"].get<int>();
+	_of_size = _j[_core_id][_cur_id]["ofmap"]["size"].get<int>();
+	//try best to use up a packet
+	if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1) / 8)) {
+		_sd_gran_r = ceil(double(_of_size) / (_flit_width * (_num_flits - 1) / 8))>_sd_gran_lb? 
+			ceil(double(_of_size) / (_flit_width * (_num_flits - 1) / 8)) > _sd_gran_lb : _sd_gran_lb;
+	}
+	else {
+		_sd_gran_r = _sd_gran;
+	}
+	_tile_time.assign(_sd_gran_r - 1, ceil(double(_time) / _sd_gran_r));
+	_tile_time.push_back(_of_size-(_sd_gran_r - 1)* ceil(double(_time) / _sd_gran_r));
+	int i = 0;
+	for (auto& x : _j[_core_id][_cur_id]["ofmap"]["transfer_id"]) {
+		vector<int>temp;
+		vector<int>temp1;
+		vector<vector<int>>temp2;
+		temp[0] = x;
+		temp1[0] = x;
+		if (_j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["type"].get<string>().compare("dram")) {
+			temp[1] = -1;
+			temp1[1] = -1;
+		}
+		else{
+			temp[1] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();
+			temp1[1] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();//
+		}
+
+		temp[2] =ceil(double(_j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>())/ _sd_gran_r);
+		temp1[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>() - temp[2];
+		temp2.assign(_sd_gran_r - 1, temp);
+		temp2.push_back(temp1);
+		_tile_size.push_back(temp2);
+	}
 	_buffer_update();
 	_dataready = _left_data.empty() &&_data_ready();
 
@@ -118,7 +158,10 @@ list<Flit*> Core::run(int time, bool empty) {
 		for (auto& p : _rq_to_sent) {
 			Flit* f = Flit::New();
 			f->nn_type = 5;
-			f->dest = _s_rq_list[p][0];
+			if(_s_rq_list[p][0]<0 && _interleave){
+				f->to_ddr = true;
+				f->mflag = true;
+			}
 			f->size = _s_rq_list[p][1];
 			f->tail = true;
 			f->head = true;
@@ -130,9 +173,23 @@ list<Flit*> Core::run(int time, bool empty) {
 	bool finish = false;
 	if (!_requirements_to_send.empty() && empty) {
 		do {
-			assert(_requirements_to_send.front()->head);
+			vector<int> temp;
+			if (_requirements_to_send.front()->head && _requirements_to_send.front()->to_ddr) {
+				int i = 0;
+				for (int p = rand()%_ddr_rnum; p < _ddr_num; p = p + _ddr_rnum) {
+					temp[i] = _ddr_id[p];
+					i = i + 1;
+				}
+			}
 			_flits_sending.push_back(_requirements_to_send.front());
 			finish = _requirements_to_send.front()->tail;
+			/*
+			if (finish && _mcast_ddr_rid<_ddr_rnum-1) {
+				_mcast_ddr_rid = _mcast_ddr_rid + 1;
+			}
+			else if (finish && _mcast_ddr_rid == _ddr_rnum - 1) {
+				_mcast_ddr_rid = 0;
+			}*/
 			_requirements_to_send.pop_front();
 			
 		} while (finish);
@@ -175,13 +232,13 @@ void Core::_buffer_update()
 	for (auto& x : _j[_core_id][_cur_id]["buffer"]) {
 		if (x["new_added"].get<bool>() == true) {
 			for (auto &y : x["source"]) {
-				if (y["type"].get<string>().compare("DRAM") != 0) {
-					_rq_to_sent.insert(y.get<int>());
+				if (y["type"].get<string>().compare("DRAM") == 0) {
 					_s_rq_list[y.get<int>()].push_back(y["id"].get<int>());	
 				}
 				else {
 					_s_rq_list[y.get<int>()].push_back(-1);
 				}
+				_rq_to_sent.insert(y.get<int>());
 				_s_rq_list[y.get<int>()].push_back(y["size"].get<int>());
 				_s_rq_list[y.get<int>()].push_back(0);
 			}

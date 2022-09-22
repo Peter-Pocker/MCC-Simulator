@@ -80,8 +80,25 @@ private:
   int _end_tile_time; //ending time of the current tile
   int _time;
   int _sd_gran;//sending granularity of obuf
+  int _sd_gran_r;//revised sending granularity
+  int _sd_gran_lb;//sending granularity lower bound
   int _cur_rc_obuf;// the obuf which recieves data;
   int _cur_sd_obuf;// the obuf which sends data;
+
+  int _of_size;
+
+  bool _interleave;
+  int _ddr_num;
+  int _ddr_rnum;//the number of routers each DDR has
+
+  //
+  int _mcast_ddr_rid;//current requirement should go to ith router (0-_ddr_id.size()/ddr_num-1)
+  list<int>_tile_time;
+  list<vector<vector<int>>>_tile_size;
+
+  vector<int> _ucast_ddr_rid;//current data unicast should go to ith router of xth DDR. (i is in 0-_ddr_id.size()/ddr_num-1; x is in 0-ddr_num-1)
+
+  vector<int>_ddr_id;
   list<Flit*> _requirements_to_send;//internal partial packets
   list<Flit*> _data_to_send;//internal partial packets
   list<Flit*> _flits_sending;//output for partial packets

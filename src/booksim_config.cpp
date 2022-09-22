@@ -30,7 +30,20 @@
  *Contains all the configurable parameters in a network
  *
  */
-
+ /*
+ * placement:1-5, 0_1 -> 0_2 -> 1_2 xy
+ *  7,8,9
+ *  3,4,5
+ *  0,1,2
+ */
+/*
+* placement:1 - 5, 0_1 -> 0_2 -> 1_2 xy
+* 20 21 22 23 24
+* 15 16 17 18 19
+* 10,11,12,13,14
+* 5, 6, 7. 8, 9
+* 0, 1, 2, 3, 4
+*/
 
 #include "booksim.hpp"
 #include "booksim_config.hpp"
@@ -52,12 +65,15 @@ BookSimConfig::BookSimConfig( )
   _int_map["DDR_lanes"] = 32;
   _int_map["DDR_fq"] = 16; //frequency / gbps
   _int_map["core_fq"] = 1; //frequency / gbps
-  _int_map["DDR_numbers"] = 4;
-  AddStrField("DDR_routers", "0,1,2,3,20,21,22,23");//the whole column (for the time being); others are cores.
-  AddStrField("DDR_il_gp", "1"); // interleave_group; no more than DDR numbers
+  _int_map["DDR_num"] = 2;
+  AddStrField("Core_routers", "{1,2,3,6,7,8,11,12,13}");//these location has cores, some routers can be idle
+  _int_map["interleave"] = 1; // 1 is interleave, 0 is not interleave; if interleaving, use -1 stands for DDRs; if without DDRs, use -n stands for nth DDR groups
+  // for interleaving: 1 fully interleave, all DDRs are used for both sending & receiving 2.partial interleave, some DDRs are used for sending, some are for receiving (if with this, if the ofmaps are not used by the next segment
+  //immediately, there will exists some mistakes. 3 no interleaving, allocate DDR for each core. Thus we only support 1 & 3 conditions.
   //To which cores does each DDR connect
-  AddStrField("DDR_1", "1,2");
-  AddStrField("DDR_2", "21,22");
+
+  //after the DDR receives its requirement, it can send data. 
+  AddStrField("DDR_routers", "0,5,4,9");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
 
@@ -65,10 +81,11 @@ BookSimConfig::BookSimConfig( )
   _int_map["num_obuf"] = 2;
   _int_map["flit_width"] = 512;
   _int_map["sending_granularity"] = 10;//output sending granularity
+  _int_map["sending_granularity_lowerbound"] = 2;
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
-  _int_map["k"] = 8; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
+  _int_map["k"] = 5; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 0; // Bransan number of wireless routers

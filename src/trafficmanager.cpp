@@ -382,8 +382,13 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     json j;
     std::ifstream("C:\\Users\\JingweiCai\\Desktop\\IR.json") >> j;
     for (int i = 0; i < _nodes; i++) {
+        
         _core[i] = new Core(config, i, j);
     }
+    for (auto& p : config.GetIntArray("Core_routers")) {
+        core_id.insert(p);
+    }
+
     //seed the network
     int seed;
     if (config.GetStr("seed") == "time")
@@ -1349,107 +1354,108 @@ void TrafficManager::_Inject()
         //int input = rand_inputs[i];
         for (int c = 0; c < _classes; ++c)
         {
-            vector<Flit*> flits = _core[i]->run(_time, _partial_packets[i][c].empty());
-            int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;
-            if (!flits.empty()) {
-                int pid = 0;
-                bool record = false;
-                bool watch = false;
-                for (auto& f : flits) {
-                    if (f->head) {
-                        pid = _cur_pid++;
-                        watch = gWatchOut && (_packets_to_watch.count(f->pid) > 0);
-                        if (watch || (_routers_to_watch.count(i) > 0))
+            if (core_id.count(i) > 0) {
+                list<Flit*> flits = _core[i]->run(_time, _partial_packets[i][c].empty());
+                int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;
+                if (!flits.empty()) {
+                    int pid = 0;
+                    bool record = false;
+                    bool watch = false;
+                    for (auto& f : flits) {
+                        if (f->head) {
+                            pid = _cur_pid++;
+                            watch = gWatchOut && (_packets_to_watch.count(f->pid) > 0);
+                            if (watch || (_routers_to_watch.count(i) > 0))
+                            {
+                                *gWatchOut << GetSimTime() << " | "
+                                    << "node" << i << " | "
+                                    << "Enqueuing packet " << pid
+                                    << " at time " << _time
+                                    << "." << endl;
+                            }
+                        }
+                        f->pid = pid;
+                        f->watch = watch | (gWatchOut && (_flits_to_watch.count(f->id) > 0));
+                        f->id = _cur_id++;
+                        f->cl = c;
+                        f->subnetwork = 0;
+                        _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
+                        if ((_sim_state == running) ||
+                            ((_sim_state == draining) && (_time < _drain_time)))
+                        {
+                            record = _measure_stats[c];
+                        }
+                        if (record)
+                        {
+                            _measured_in_flight_flits[f->cl].insert(make_pair(f->id, f));
+                        }
+                        if (gTrace)
+                        {
+                            std::cout << "New Flit " << f->src << endl;
+                        }
+                        f->type = packet_type;
+                        switch (_pri_type)
+                        {
+                        case class_based:
+                            f->pri = _class_priority[c];
+                            assert(f->pri >= 0);
+                            break;
+                        case age_based:
+                            f->pri = numeric_limits<int>::max() - timer;
+                            assert(f->pri >= 0);
+                            break;
+                        case sequence_based:
+                            f->pri = numeric_limits<int>::max() - _packet_seq_no[i];
+                            assert(f->pri >= 0);
+                            break;
+                        default:
+                            f->pri = 0;
+                        }
+                        f->vc = -1;
+                        if (f->tail && !f->mflag) {
+                            uf_diff[f->id] = 0;
+                            uf_diff1[f->id] = 0;
+                        }
+                        if (f->mflag) {
+                            mcastcount++;
+                            f->oid = f->id;
+                            if (f->head)
+                            {
+                                latest_mdnd_hop = hop_calculator(i, f->mdest.first);
+                                non_mdnd_hops += latest_mdnd_hop;
+                            }
+                            if (f->tail)
+                            {
+                                f_orig_ctime[f->id] = f->ctime;
+                                f_diff[f->id] = 0;
+                                f_diff1[f->id] = 0;
+                            }
+                            if (f->head && f->watch || (_routers_to_watch.count(i) > 0))
+                            {
+                                *gWatchOut << "Pid " << f->pid << " Destinations are: " << endl;
+                                for (int i = 0; i < f->mdest.first.size(); i++) {
+                                    *gWatchOut << f->mdest.first[i] << " ";
+                                }
+                                *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << i << endl;
+                            }
+                        }
+                        // Potentially generate packets for any (input,class)
+                        // that is currently empty
+                        if (f->watch || (_routers_to_watch.count(i) > 0))
                         {
                             *gWatchOut << GetSimTime() << " | "
                                 << "node" << i << " | "
-                                << "Enqueuing packet " << pid
-                                << " at time " << _time
+                                << "Enqueuing flit " << f->id
+                                << " (packet " << f->pid
+                                << ") at time " << timer
+                                << " to node " << f->dest
+                                << " | mcast " << f->mflag
                                 << "." << endl;
                         }
-                    }
-                    f->pid = pid;
-                    f->watch = watch | (gWatchOut && (_flits_to_watch.count(f->id) > 0));
-                    f->id = _cur_id++;
-                    f->cl = c;
-                    f->subnetwork = 0;
-                    _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
-                    if ((_sim_state == running) ||
-                        ((_sim_state == draining) && (_time < _drain_time)))
-                    {
-                        record = _measure_stats[c];
-                    }
-                    if (record)
-                    {
-                        _measured_in_flight_flits[f->cl].insert(make_pair(f->id, f));
-                    }
-                    if (gTrace)
-                    {
-                        std::cout << "New Flit " << f->src << endl;
-                    }
-                    f->type = packet_type;
-                    switch (_pri_type)
-                    {
-                    case class_based:
-                        f->pri = _class_priority[c];
-                        assert(f->pri >= 0);
-                        break;
-                    case age_based:
-                        f->pri = numeric_limits<int>::max() - timer;
-                        assert(f->pri >= 0);
-                        break;
-                    case sequence_based:
-                        f->pri = numeric_limits<int>::max() - _packet_seq_no[i];
-                        assert(f->pri >= 0);
-                        break;
-                    default:
-                        f->pri = 0;
-                    }
-                    f->vc = -1;
-                    if (f->tail && !f->mflag) {
-                        uf_diff[f->id] = 0;
-                        uf_diff1[f->id] = 0;
-                    }
-                    if (f->mflag) {
-                        mcastcount++;
-                        f->oid = f->id;
-                        if (f->head)
-                        {
-                            latest_mdnd_hop = hop_calculator(i, f->mdest.first);
-                            non_mdnd_hops += latest_mdnd_hop;
-                        }
-                        if (f->tail)
-                        {
-                            f_orig_ctime[f->id] = f->ctime;
-                            f_diff[f->id] = 0;
-                            f_diff1[f->id] = 0;
-                        }
-                        if (f->head && f->watch || (_routers_to_watch.count(i) > 0))
-                        {
-                            *gWatchOut << "Pid " << f->pid << " Destinations are: " << endl;
-                            for (int i = 0; i < f->mdest.first.size(); i++) {
-                                *gWatchOut << f->mdest.first[i] << " ";
-                            }
-                            *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << i << endl;
-                        }
-                    }
-                    // Potentially generate packets for any (input,class)
-                    // that is currently empty
-                    if (f->watch || (_routers_to_watch.count(i) > 0))
-                    {
-                        *gWatchOut << GetSimTime() << " | "
-                            << "node" << i << " | "
-                            << "Enqueuing flit " << f->id
-                            << " (packet " << f->pid
-                            << ") at time " << timer
-                            << " to node " << f->dest
-                            << " | mcast " << f->mflag
-                            << "." << endl;
-                    }
 
-                    total_count++;
+                        total_count++;
 
-                    _partial_packets[i][c].push_back(f);
+                        _partial_packets[i][c].push_back(f);
 
                         if ((_sim_state == draining) &&
                             (_qtime[i][c] > _drain_time))
@@ -1458,6 +1464,7 @@ void TrafficManager::_Inject()
                         }
                     }
                 }
+            }
             }
         }
  }
@@ -1841,7 +1848,7 @@ void TrafficManager::_Step()
 
 #ifdef TRACK_FLOWS
                 ++_ejected_flits[f->cl][n];
-#endif
+#endif          assert(core_id.count(n)>0);
                 _core[n]->receive_message(f);
                 _RetireFlit(f, n);
             
