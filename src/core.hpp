@@ -51,7 +51,7 @@ public:
 list<Flit*> run(int time,bool empty);
 
 
-vector<Flit*> send_data();
+void _send_data();
 //Flit* send_requirement();
 void receive_message(Flit*f);
 Core(const Configuration& config, int id, const nlohmann::json& j);
@@ -61,9 +61,10 @@ private:
   void _update();
   void _buffer_update();
   bool _data_ready();
-  bool _test_obuf();//to test whether there is an empty obuf;
+//  bool _test_obuf();//to test whether there is an empty obuf;
   void _compute();
-  void _generate_next_obuf_id();
+  bool _generate_next_rc_obuf_id();
+  bool _generate_next_sd_obuf_id();
   void _write_obuf();
   nlohmann::json _j;
   int _core_id;
@@ -78,6 +79,7 @@ private:
   int _start_wl_time;//starting time of the current workload
   int _start_tile_time; //starting time of the current tile
   int _end_tile_time; //ending time of the current tile
+  int _cur_tile_id;
   int _time;
   int _sd_gran;//sending granularity of obuf
   int _sd_gran_r;//revised sending granularity
@@ -87,6 +89,8 @@ private:
 
   int _of_size;
 
+  int _sd_mini_tile_id;
+
   bool _interleave;
   int _ddr_num;
   int _ddr_rnum;//the number of routers each DDR has
@@ -94,7 +98,7 @@ private:
   //
   int _mcast_ddr_rid;//current requirement should go to ith router (0-_ddr_id.size()/ddr_num-1)
   list<int>_tile_time;
-  list<vector<vector<int>>>_tile_size;
+  vector<list<vector<int>>>_tile_size;
 
   vector<int> _ucast_ddr_rid;//current data unicast should go to ith router of xth DDR. (i is in 0-_ddr_id.size()/ddr_num-1; x is in 0-ddr_num-1)
 
@@ -113,9 +117,9 @@ private:
   //for buffer record
   unordered_map<string, unordered_set<int>> _core_buffer;//layername,corresponding transfer
   unordered_set<int>_left_data;
-  vector<unordered_map<int, vector<int>>> o_buf;//each entry of vector is an output_buffer
+  vector<vector<vector<int>>> o_buf;//each entry of vector is an output_buffer
   //<transfer_id,vector<destination,size>>
-
+  unordered_map<int, int> id_ddr_rel;//ddr relates to transfer_id
   // signal
   bool _wl_fn;//workload finish
   bool _all_fn;//all workload finsh

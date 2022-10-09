@@ -78,6 +78,8 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _mcast_ddr_rid = 0;
    _ucast_ddr_rid.assign(4,0);
    _ddr_rnum = _ddr_id.size() / _ddr_num;
+   _cur_tile_id = 0;
+   _sd_mini_tile_id = 0;
 }  
 
 void Core::_update()
@@ -86,6 +88,7 @@ void Core::_update()
 	_cur_wl_id = _j[_core_id][_cur_id]["id"].get<int>();
 	_cp_time = _j[_core_id][_cur_id]["time"].get<int>();
 	_of_size = _j[_core_id][_cur_id]["ofmap"]["size"].get<int>();
+	_cur_tile_id = 0;
 	//try best to use up a packet
 	if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1) / 8)) {
 		_sd_gran_r = ceil(double(_of_size) / (_flit_width * (_num_flits - 1) / 8))>_sd_gran_lb? 
@@ -100,20 +103,21 @@ void Core::_update()
 	for (auto& x : _j[_core_id][_cur_id]["ofmap"]["transfer_id"]) {
 		vector<int>temp;
 		vector<int>temp1;
-		vector<vector<int>>temp2;
+		list<vector<int>>temp2;
 		temp[0] = x;
 		temp1[0] = x;
-		if (_j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["type"].get<string>().compare("dram")) {
-			temp[1] = -1;
-			temp1[1] = -1;
+		temp[1] =ceil(double(_j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>())/ _sd_gran_r);
+		temp1[1] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>() - temp[2];
+		for (auto& x : _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]) {
+			if (x["type"].get<string>().compare("dram")) {
+				temp.push_back(-1);
+				temp.push_back(-1);
+			}
+			else {
+				temp[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();
+				temp1[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();//
+			}
 		}
-		else{
-			temp[1] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();
-			temp1[1] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();//
-		}
-
-		temp[2] =ceil(double(_j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>())/ _sd_gran_r);
-		temp1[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>() - temp[2];
 		temp2.assign(_sd_gran_r - 1, temp);
 		temp2.push_back(temp1);
 		_tile_size.push_back(temp2);
@@ -126,27 +130,32 @@ void Core::_update()
 list<Flit*> Core::run(int time, bool empty) {
 //	receive_message(f);
 	_flits_sending.clear();
-	if (_wl_fn && _dataready && _test_obuf()) {
+	if (_wl_fn && _dataready && _generate_next_rc_obuf_id()) {
 		_running = true;
 		_wl_fn = false;
 		_dataready = false;
 		_start_wl_time = time;
 		_start_tile_time = time;
-		_end_tile_time = _start_tile_time + _cp_time / _sd_gran; //neglect non-integer part
-		_generate_next_obuf_id();
+		_end_tile_time = _start_tile_time + _tile_time.front(); //neglect non-integer part
 	}
 	if (_running) {
 		if (_time == _end_tile_time) {
+			_tile_time.pop_front();
 			_write_obuf();
-			_generate_next_obuf_id();
+			_generate_next_rc_obuf_id();
 			if (_cur_rc_obuf != -1) {
+				_cur_tile_id = _cur_tile_id + 1;
 				_start_tile_time = _time + 1;
-				_end_tile_time = _time + _cp_time / _sd_gran;
+				_end_tile_time = _time + _tile_time.front();
 			}
 		}
-		if (_cur_rc_obuf == -1)
+		if (_cur_rc_obuf != -1)
 		{
-			_generate_next_obuf_id();
+			_generate_next_rc_obuf_id();
+		}
+		if (_tile_size.empty()) {
+			assert(_tile_time.empty());
+			_wl_fn = true;
 		}
 
 	}
@@ -194,14 +203,8 @@ list<Flit*> Core::run(int time, bool empty) {
 			
 		} while (finish);
 	}
-	else if (_requirements_to_send.empty() && !o_buf[_cur_sd_obuf].empty() && empty) {
-		do {
-			assert(_data_to_send.front()->head);
-			_flits_sending.push_back(_data_to_send.front());
-			finish = _data_to_send.front()->tail;
-			_data_to_send.pop_front();
-			
-		} while (finish);
+	else if (_requirements_to_send.empty()  && empty) {
+		_send_data();
 	}
 	return _flits_sending;
 }
@@ -286,26 +289,120 @@ bool Core::_data_ready()
 	
 		
 }
-
+/*
 bool Core::_test_obuf() {
 	bool temp=false;
 	for (auto& p : o_buf) {
 		temp = temp || p.empty();
 	}
 	return temp;
-}
+}*/
 
-void Core::_generate_next_obuf_id() {
+bool Core::_generate_next_rc_obuf_id() {
 	for (int i = 0; i < _num_obuf; i++) {
 		if (o_buf[i].empty()) {
 			_cur_rc_obuf = i;
-			return;
+			return true;
 		}
 	}
 	_cur_rc_obuf = -1;
+	return false;
+}
+
+bool Core::_generate_next_sd_obuf_id() {
+	for (int i = 0; i < _num_obuf; i++) {
+		if (i!=_cur_rc_obuf &&  !o_buf[i].empty()) {
+			_cur_sd_obuf = i;
+			return true;
+		}
+	}
+	_cur_sd_obuf = -1;
+	return false;
 }
 
 void Core::_write_obuf() {
-	
+	for (auto& x : _tile_size) {
+		o_buf[_cur_rc_obuf].push_back(x.front());
+		x.pop_front();
+	}
 }
+
+void Core::_send_data() {
+	if (o_buf[_cur_sd_obuf].empty()) {
+		if (!_generate_next_sd_obuf_id()) {
+			return;
+		}
+	}
+	else {
+//		for (auto& x : o_buf[_cur_sd_obuf]) {
+		
+			bool temp = ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] * 8) / _flit_width) > _num_flits;
+			int flits = temp ? _num_flits : ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] * 8) / _flit_width);//data part, need to add head flit
+			for (int i = 0; i < flits+1; i++) {
+				Flit* f = Flit::New();
+				f->nn_type = 6;
+				f->head = i == 0 ? true : false;
+				f->tail = i == (flits) ? true : false;
+				if (f->tail) {
+					f->size = temp ? _flit_width * _num_flits / 8 : o_buf[_cur_sd_obuf][_sd_mini_tile_id][2];
+					o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] = o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] - f->size;
+					assert(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] >= 0);
+					if (o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] = 0) {
+						o_buf[_cur_sd_obuf].erase(std::begin(o_buf[_cur_sd_obuf])+ _sd_mini_tile_id);
+					}
+					f->transfer_id = o_buf[_cur_sd_obuf][_sd_mini_tile_id][0];
+				}
+				if (f->head) {
+					if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].size() > 4) {
+						f->mflag = true;
+						for (vector<int>::iterator iter = o_buf[_cur_sd_obuf][_sd_mini_tile_id].begin() + 3; iter != o_buf[_cur_sd_obuf][_sd_mini_tile_id].end(); iter++) {
+							if (*iter != -1)
+								f->mdest.first.push_back(*iter);
+							else {
+								if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == 0) {
+									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = rand() % _ddr_num;
+									f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
+								}
+								else {
+									if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) < _ddr_num - 1) {
+										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) + 1;
+										f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
+									}
+									else if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == _ddr_num - 1) {
+										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = 0;
+										f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
+									}
+								}
+							}
+						}
+					}
+					else if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].size() == 4) {
+						if (o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] != -1) {
+							f->dest = o_buf[_cur_sd_obuf][_sd_mini_tile_id][2];
+						}
+						else {
+							if(id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0])==0){
+								id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = rand() % _ddr_num;
+								f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]]*_ddr_num+rand()%_ddr_rnum];
+							}
+							else {
+								if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) < _ddr_num - 1) {
+									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) + 1;
+									f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum];
+								}
+								else if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == _ddr_num - 1) {
+									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = 0;
+									f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum];
+								}
+							}
+						}
+					}
+				}
+				
+
+				_flits_sending.push_back(f);
+			}
+		}
+	}
+//}
 

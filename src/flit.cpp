@@ -75,6 +75,7 @@ void Flit::Reset()
   hops      = 0 ;
   watch     = false ;
   record    = false ;
+  // for DNN
   end = false;
   size = -1;
   transfer_id = -1;
