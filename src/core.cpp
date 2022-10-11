@@ -224,11 +224,14 @@ void Core::receive_message(Flit*f) {
 		_r_rq_list[f->transfer_id].insert(f->src);
 	}
 	if (f->nn_type == 6) {
-		_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - f->size;
+		_s_rq_list[f->transfer_id][1] = _s_rq_list[f->transfer_id][1] - f->size;
 	}
 	if (f->nn_type == 6 && f->end) {
-		_core_buffer[f->layer_name].insert(f->transfer_id);
-		assert(_s_rq_list[f->transfer_id][2] = 0);
+		_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - 1;
+		if (_s_rq_list[f->transfer_id][2] == 0) {
+			assert(_s_rq_list[f->transfer_id][1] = 0);
+			_core_buffer[f->layer_name].insert(f->transfer_id);
+		}
 		_left_data.erase(f->transfer_id);
 	}
 	
@@ -241,14 +244,16 @@ void Core::_buffer_update()
 		if (x["new_added"].get<bool>() == true) {
 			for (auto &y : x["source"]) {
 				if (y["type"].get<string>().compare("DRAM") == 0) {
-					_s_rq_list[y.get<int>()].push_back(y["id"].get<int>());	
+					_s_rq_list[y.get<int>()][0]=y["id"].get<int>();	
+					_s_rq_list[y.get<int>()][1]=y["size"].get<int>();
+					_s_rq_list[y.get<int>()][2] = 1;
 				}
-				else {
-					_s_rq_list[y.get<int>()].push_back(-1);
+				else if (y["type"].get<string>().compare("DRAM") == 1){
+					_s_rq_list[y.get<int>()][0]=-1;
+					_s_rq_list[y.get<int>()][1] = _interleave?_ddr_num:1;//to revise it into ddr group number
 				}
 				_rq_to_sent.insert(y.get<int>());
-				_s_rq_list[y.get<int>()].push_back(y["size"].get<int>());
-				_s_rq_list[y.get<int>()].push_back(0);
+				
 			}
 		}
 	}

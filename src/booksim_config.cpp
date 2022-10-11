@@ -67,15 +67,14 @@ BookSimConfig::BookSimConfig( )
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 2;
   AddStrField("Core_routers", "{1,2,3,6,7,8,11,12,13}");//these location has cores, some routers can be idle
-  _int_map["interleave"] = 1; // 1 is interleave, 0 is not interleave; if interleaving, use -1 stands for DDRs; if without DDRs, use -n stands for nth DDR groups
-  // for interleaving: 1 fully interleave, all DDRs are used for both sending & receiving 2.partial interleave, some DDRs are used for sending, some are for receiving (if with this, if the ofmaps are not used by the next segment
-  //immediately, there will exists some mistakes. 3 no interleaving, allocate DDR for each core. Thus we only support 1 & 3 conditions.
-  //To which cores does each DDR connect
+  _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
 
   //after the DDR receives its requirement, it can send data. 
   AddStrField("DDR_routers", "0,5,4,9");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
+
+  //todo DDR number,router for each DDR, DDR group(add this,number & ddr for this group)
 
   //Core configuration
   _int_map["num_obuf"] = 2;

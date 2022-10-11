@@ -1849,7 +1849,9 @@ void TrafficManager::_Step()
 #ifdef TRACK_FLOWS
                 ++_ejected_flits[f->cl][n];
 #endif          assert(core_id.count(n)>0);
-                _core[n]->receive_message(f);
+                if (f->tail) {
+                    _core[n]->receive_message(f);
+                }
                 _RetireFlit(f, n);
             
             }

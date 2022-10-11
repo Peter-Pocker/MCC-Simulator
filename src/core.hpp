@@ -109,7 +109,7 @@ private:
  // std::unordered_map<int,int> wl_map;
   //for loading data (double ckeck)
   unordered_set<int> _rq_to_sent;//transfer_id
-  unordered_map<int, vector<int>> _s_rq_list;//sent_request;the length of the vector is 3, 1st is core_id, 2nd is size, 3rd is 1 or 0(whether finish)
+  unordered_map<int, vector<int>> _s_rq_list;//sent_request;the length of the vector is 3, 1st is core_id, 2nd is size, 3rd is number of received end (ddr is >=1)
  // unordered_map<int, int>_r_data_list;//receive_data_size;Each entry is decremented and should end up at 0
   //for sending data
   unordered_map<int, unordered_set<int>> _r_rq_list;//received_request,first int is transfer_id£¬set is core list.(unicast has 1 entry, multicast has multiple entry)
