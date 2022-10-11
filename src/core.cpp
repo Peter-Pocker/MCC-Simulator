@@ -80,6 +80,7 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _ddr_rnum = _ddr_id.size() / _ddr_num;
    _cur_tile_id = 0;
    _sd_mini_tile_id = 0;
+   pending = false;
 }  
 
 void Core::_update()
@@ -141,24 +142,21 @@ list<Flit*> Core::run(int time, bool empty) {
 	if (_running) {
 		if (_time == _end_tile_time) {
 			_generate_next_rc_obuf_id();
-			if (_cur_rc_obuf = -1) {
+			if (_cur_rc_obuf == -1) {
 				pending = true;
 			}
 		}
-		if (_time == _end_tile_time) {
+		if ((_time == _end_tile_time && _cur_rc_obuf!=-1)||(pending&& _cur_rc_obuf != -1)) {
+			pending = false;
 			_tile_time.pop_front();
 			_write_obuf();
-			
 			if (_cur_rc_obuf != -1) {
 				_cur_tile_id = _cur_tile_id + 1;
 				_start_tile_time = _time + 1;
 				_end_tile_time = _time + _tile_time.front();
 			}
 		}
-		if (_cur_rc_obuf = -1)
-		{
-			_generate_next_rc_obuf_id();
-		}
+
 		if (_tile_size.empty()) {
 			assert(_tile_time.empty());
 			_wl_fn = true;

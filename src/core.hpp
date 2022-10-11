@@ -94,7 +94,7 @@ private:
   bool _interleave;
   int _ddr_num;
   int _ddr_rnum;//the number of routers each DDR has
-
+  bool pending;
   //
   int _mcast_ddr_rid;//current requirement should go to ith router (0-_ddr_id.size()/ddr_num-1)
   list<int>_tile_time;
