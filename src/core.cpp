@@ -73,7 +73,7 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _all_fn = false;
    _running = false;
    o_buf.resize(_num_obuf);
-   _cur_rc_obuf=-1;
+   _cur_rc_obuf=0;
    _cur_sd_obuf=-1;
    _mcast_ddr_rid = 0;
    _ucast_ddr_rid.assign(4,0);
@@ -130,7 +130,7 @@ void Core::_update()
 list<Flit*> Core::run(int time, bool empty) {
 //	receive_message(f);
 	_flits_sending.clear();
-	if (_wl_fn && _dataready && _generate_next_rc_obuf_id()) {
+	if (_wl_fn && _dataready && _cur_rc_obuf!=-1) {
 		_running = true;
 		_wl_fn = false;
 		_dataready = false;
@@ -140,16 +140,22 @@ list<Flit*> Core::run(int time, bool empty) {
 	}
 	if (_running) {
 		if (_time == _end_tile_time) {
+			_generate_next_rc_obuf_id();
+			if (_cur_rc_obuf = -1) {
+				pending = true;
+			}
+		}
+		if (_time == _end_tile_time) {
 			_tile_time.pop_front();
 			_write_obuf();
-			_generate_next_rc_obuf_id();
+			
 			if (_cur_rc_obuf != -1) {
 				_cur_tile_id = _cur_tile_id + 1;
 				_start_tile_time = _time + 1;
 				_end_tile_time = _time + _tile_time.front();
 			}
 		}
-		if (_cur_rc_obuf != -1)
+		if (_cur_rc_obuf = -1)
 		{
 			_generate_next_rc_obuf_id();
 		}
@@ -203,7 +209,8 @@ list<Flit*> Core::run(int time, bool empty) {
 			
 		} while (finish);
 	}
-	else if (_requirements_to_send.empty()  && empty) {
+	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1) {
+		assert(!o_buf[_cur_sd_obuf].empty());
 		_send_data();
 	}
 	return _flits_sending;
@@ -328,31 +335,36 @@ void Core::_write_obuf() {
 }
 
 void Core::_send_data() {
-	if (o_buf[_cur_sd_obuf].empty()) {
-		if (!_generate_next_sd_obuf_id()) {
-			return;
-		}
-	}
-	else {
+	//if (o_buf[_cur_sd_obuf].empty()) {
+	//	if (!_generate_next_sd_obuf_id()) {
+	//		return;
+	//	}
+	//}
+	//if(_cur_sd_obuf!=-1) {
 //		for (auto& x : o_buf[_cur_sd_obuf]) {
-		
-			bool temp = ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] * 8) / _flit_width) > _num_flits;
-			int flits = temp ? _num_flits : ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] * 8) / _flit_width);//data part, need to add head flit
-			for (int i = 0; i < flits+1; i++) {
-				Flit* f = Flit::New();
-				f->nn_type = 6;
-				f->head = i == 0 ? true : false;
-				f->tail = i == (flits) ? true : false;
-				if (f->tail) {
-					f->size = temp ? _flit_width * _num_flits / 8 : o_buf[_cur_sd_obuf][_sd_mini_tile_id][2];
-					o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] = o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] - f->size;
-					assert(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] >= 0);
-					if (o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] = 0) {
-						o_buf[_cur_sd_obuf].erase(std::begin(o_buf[_cur_sd_obuf])+ _sd_mini_tile_id);
+		bool temp = ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] ) / _flit_width) > _num_flits;
+		int flits = temp ? _num_flits : ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] ) / _flit_width);//data part, need to add head flit
+		for (int i = 0; i < flits+1; i++) {
+			Flit* f = Flit::New();
+			f->nn_type = 6;
+			f->head = i == 0 ? true : false;
+			f->tail = i == (flits) ? true : false;
+			if (f->tail) {
+				f->size = temp ? _flit_width * _num_flits: o_buf[_cur_sd_obuf][_sd_mini_tile_id][2];
+				o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] = o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] - f->size;
+				assert(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] >= 0);
+				if (o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] == 0) {
+					o_buf[_cur_sd_obuf].erase(o_buf[_cur_sd_obuf].begin()+ _sd_mini_tile_id-1);
+					if (o_buf[_cur_sd_obuf].empty()) {
+						if (_cur_rc_obuf == -1) {
+							_cur_rc_obuf = _cur_sd_obuf;
+						}
+						_generate_next_sd_obuf_id();
 					}
-					f->transfer_id = o_buf[_cur_sd_obuf][_sd_mini_tile_id][0];
 				}
-				if (f->head) {
+					f->transfer_id = o_buf[_cur_sd_obuf][_sd_mini_tile_id][0];
+			}
+			if (f->head) {
 					if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].size() > 4) {
 						f->mflag = true;
 						for (vector<int>::iterator iter = o_buf[_cur_sd_obuf][_sd_mini_tile_id].begin() + 3; iter != o_buf[_cur_sd_obuf][_sd_mini_tile_id].end(); iter++) {
@@ -397,12 +409,12 @@ void Core::_send_data() {
 							}
 						}
 					}
-				}
-				
-
+			}
 				_flits_sending.push_back(f);
 			}
 		}
-	}
+
+
+	
 //}
 
