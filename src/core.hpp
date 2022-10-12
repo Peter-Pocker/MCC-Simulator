@@ -112,7 +112,9 @@ private:
   unordered_map<int, vector<int>> _s_rq_list;//sent_request;the length of the vector is 3, 1st is core_id, 2nd is size, 3rd is number of received end (ddr is >=1)
  // unordered_map<int, int>_r_data_list;//receive_data_size;Each entry is decremented and should end up at 0
   //for sending data
-  unordered_map<int, unordered_set<int>> _r_rq_list;//received_request,first int is transfer_id£¬set is core list.(unicast has 1 entry, multicast has multiple entry)
+  //unordered_map<int, unordered_set<int>> _r_rq_list;//received_request,first int is transfer_id£¬set is core list.(unicast has 1 entry, multicast has multiple entry)
+  unordered_set<int> _r_rq_list;
+  unordered_set<int> _cur_wl_rq;//the request id of current workload;
   //unordered_map<int, int> _s_data_list;//sending_data; no need to distinguish unicast and multicast
   //for buffer record
   unordered_map<string, unordered_set<int>> _core_buffer;//layername,corresponding transfer

@@ -39,12 +39,17 @@
 todo:
 1.if a multicast has multiple entries with the same detination. only recod one.
 2.all vector should be initialize size
+3.overall finish
 */
 
 /*
 * 1.send requirements need add DDR process
 * 2.send data also need DDR process
 * 3.add DDR placement logic
+*/
+
+/*
+1.choose to guarantee that all requests are received, the data can be sent; in the future, the sub tile should be fully received.
 */
 #include "booksim.hpp"
 #include "core.hpp"
@@ -101,18 +106,20 @@ void Core::_update()
 	_tile_time.assign(_sd_gran_r - 1, ceil(double(_time) / _sd_gran_r));
 	_tile_time.push_back(_of_size-(_sd_gran_r - 1)* ceil(double(_time) / _sd_gran_r));
 	int i = 0;
-	for (auto& x : _j[_core_id][_cur_id]["ofmap"]["transfer_id"]) {
-		vector<int>temp;
-		vector<int>temp1;
-		list<vector<int>>temp2;
+	vector<int>temp(3);
+	vector<int>temp1(3);
+	list<vector<int>>temp2;
+	
+	for (auto& x : _j[_core_id][_cur_id]["ofmap"]) {
+		_cur_wl_rq.insert(x.get<int>());
 		temp[0] = x;
 		temp1[0] = x;
 		temp[1] =ceil(double(_j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>())/ _sd_gran_r);
 		temp1[1] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>() - temp[2];
 		for (auto& x : _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]) {
 			if (x["type"].get<string>().compare("dram")) {
-				temp.push_back(-1);
-				temp.push_back(-1);
+				temp[2]=-1;
+				temp1[2]=-1;
 			}
 			else {
 				temp[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();
@@ -122,6 +129,15 @@ void Core::_update()
 		temp2.assign(_sd_gran_r - 1, temp);
 		temp2.push_back(temp1);
 		_tile_size.push_back(temp2);
+	}
+	temp.clear();
+	temp1.clear();
+	temp2.clear();
+	for (auto& x : _cur_wl_rq) {
+		if (_r_rq_list.count(x)!=0) {
+			_r_rq_list.erase(x);
+			_cur_wl_rq.erase(x);
+		}
 	}
 	_buffer_update();
 	_dataready = _left_data.empty() &&_data_ready();
@@ -207,21 +223,23 @@ list<Flit*> Core::run(int time, bool empty) {
 			
 		} while (finish);
 	}
-	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1) {
+	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1&& _cur_wl_rq.empty()) {
 		assert(!o_buf[_cur_sd_obuf].empty());
 		_send_data();
 	}
 	return _flits_sending;
 }
 
-void Core::_compute() {
-	
-}
 
 void Core::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
 	if (f->nn_type == 5) {
-		_r_rq_list[f->transfer_id].insert(f->src);
+		if (_cur_wl_rq.count(f->transfer_id) == 0) {
+			_r_rq_list.insert(f->transfer_id);
+		}
+		else {
+			_cur_wl_rq.erase(f->transfer_id);
+		}
 	}
 	if (f->nn_type == 6) {
 		_s_rq_list[f->transfer_id][1] = _s_rq_list[f->transfer_id][1] - f->size;

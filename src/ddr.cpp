@@ -47,88 +47,20 @@ todo:
 * 3.add DDR placement logic
 */
 #include "booksim.hpp"
-#include "core.hpp"
+#include "ddr.hpp"
 
 
-Core::Core(const Configuration& config, int id, const nlohmann::json &j)
+DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 {  
-   _num_obuf = config.GetInt("num_obuf");
-   _num_flits= config.GetInt("packet_size");
-   _flit_width = config.GetInt("flit_width");
-   _interleave = config.GetInt("interleave")==1 ? true : false;
-   _ddr_num = config.GetInt("DDR_num");
-   _ddr_id = config.GetIntArray("DDR_routers");
-   _sd_gran = config.GetInt("sending_granularity");
-   _sd_gran_lb= config.GetInt("sending_granularity_lowerbound");
-   _core_id = id;
-   _j[to_string(id)] = j[to_string(id)];
-   _cur_wl_id = -1;
-   _cur_id = -1;
-   _start_wl_time = -1;
-   _start_tile_time = -1;
-   _end_tile_time = -1;
-   _cp_time = -1;
-   _dataready =false;
-   _wl_fn = true;//the first workload can be viewed as a workload after a virtual previous one.
-   _all_fn = false;
-   _running = false;
-   o_buf.resize(_num_obuf);
-   _cur_rc_obuf=0;
-   _cur_sd_obuf=-1;
-   _mcast_ddr_rid = 0;
-   _ucast_ddr_rid.assign(4,0);
-   _ddr_rnum = _ddr_id.size() / _ddr_num;
-   _cur_tile_id = 0;
-   _sd_mini_tile_id = 0;
-   pending = false;
+	for (auto& x : j[-1]["ofmaps"]) {
+			for (auto& y : x["source"]) {
+				_ofm_to_ifm[x].insert(y.get<int>());
+			}
+	}
 }  
 
-void Core::_update()
-{
-	_cur_id = _cur_id + 1;
-	_cur_wl_id = _j[_core_id][_cur_id]["id"].get<int>();
-	_cp_time = _j[_core_id][_cur_id]["time"].get<int>();
-	_of_size = _j[_core_id][_cur_id]["ofmap"]["size"].get<int>();
-	_cur_tile_id = 0;
-	//try best to use up a packet
-	if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1) / 8)) {
-		_sd_gran_r = ceil(double(_of_size) / (_flit_width * (_num_flits - 1) / 8))>_sd_gran_lb? 
-			ceil(double(_of_size) / (_flit_width * (_num_flits - 1) / 8)) > _sd_gran_lb : _sd_gran_lb;
-	}
-	else {
-		_sd_gran_r = _sd_gran;
-	}
-	_tile_time.assign(_sd_gran_r - 1, ceil(double(_time) / _sd_gran_r));
-	_tile_time.push_back(_of_size-(_sd_gran_r - 1)* ceil(double(_time) / _sd_gran_r));
-	int i = 0;
-	for (auto& x : _j[_core_id][_cur_id]["ofmap"]["transfer_id"]) {
-		vector<int>temp;
-		vector<int>temp1;
-		list<vector<int>>temp2;
-		temp[0] = x;
-		temp1[0] = x;
-		temp[1] =ceil(double(_j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>())/ _sd_gran_r);
-		temp1[1] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>() - temp[2];
-		for (auto& x : _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]) {
-			if (x["type"].get<string>().compare("dram")) {
-				temp.push_back(-1);
-				temp.push_back(-1);
-			}
-			else {
-				temp[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();
-				temp1[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();//
-			}
-		}
-		temp2.assign(_sd_gran_r - 1, temp);
-		temp2.push_back(temp1);
-		_tile_size.push_back(temp2);
-	}
-	_buffer_update();
-	_dataready = _left_data.empty() &&_data_ready();
 
-}
-
-list<Flit*> Core::run(int time, bool empty) {
+list<Flit*> DDR::run(int time, bool empty) {
 //	receive_message(f);
 	_flits_sending.clear();
 	if (_wl_fn && _dataready && _cur_rc_obuf!=-1) {
@@ -214,31 +146,21 @@ list<Flit*> Core::run(int time, bool empty) {
 	return _flits_sending;
 }
 
-void Core::_compute() {
-	
-}
 
-void Core::receive_message(Flit*f) {
+
+void DDR::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
 	if (f->nn_type == 5) {
-		_r_rq_list[f->transfer_id].insert(f->src);
-	}
-	if (f->nn_type == 6) {
-		_s_rq_list[f->transfer_id][1] = _s_rq_list[f->transfer_id][1] - f->size;
+		_r_rq_list.insert(f->transfer_id);
 	}
 	if (f->nn_type == 6 && f->end) {
-		_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - 1;
-		if (_s_rq_list[f->transfer_id][2] == 0) {
-			assert(_s_rq_list[f->transfer_id][1] = 0);
-			_core_buffer[f->layer_name].insert(f->transfer_id);
-		}
-		_left_data.erase(f->transfer_id);
+		
 	}
 	
 
 }
 //todo delete out-of-date data
-void Core::_buffer_update()
+void DDR::_buffer_update()
 {
 	for (auto& x : _j[_core_id][_cur_id]["buffer"]) {
 		if (x["new_added"].get<bool>() == true) {
@@ -259,7 +181,7 @@ void Core::_buffer_update()
 	}
 }
 //when a new workload comes, we check which data has not been in buffer and construct _left_data.
-bool Core::_data_ready()
+bool DDR::_data_ready()
 {
 	_left_data.clear();
 	bool temp = true;
@@ -300,7 +222,7 @@ bool Core::_data_ready()
 		
 }
 /*
-bool Core::_test_obuf() {
+bool DDR::_test_obuf() {
 	bool temp=false;
 	for (auto& p : o_buf) {
 		temp = temp || p.empty();
@@ -308,7 +230,7 @@ bool Core::_test_obuf() {
 	return temp;
 }*/
 
-bool Core::_generate_next_rc_obuf_id() {
+bool DDR::_generate_next_rc_obuf_id() {
 	for (int i = 0; i < _num_obuf; i++) {
 		if (o_buf[i].empty()) {
 			_cur_rc_obuf = i;
@@ -319,7 +241,7 @@ bool Core::_generate_next_rc_obuf_id() {
 	return false;
 }
 
-bool Core::_generate_next_sd_obuf_id() {
+bool DDR::_generate_next_sd_obuf_id() {
 	for (int i = 0; i < _num_obuf; i++) {
 		if (i!=_cur_rc_obuf &&  !o_buf[i].empty()) {
 			_cur_sd_obuf = i;
@@ -330,92 +252,14 @@ bool Core::_generate_next_sd_obuf_id() {
 	return false;
 }
 
-void Core::_write_obuf() {
+void DDR::_write_obuf() {
 	for (auto& x : _tile_size) {
 		o_buf[_cur_rc_obuf].push_back(x.front());
 		x.pop_front();
 	}
 }
 
-void Core::_send_data() {
-	//if (o_buf[_cur_sd_obuf].empty()) {
-	//	if (!_generate_next_sd_obuf_id()) {
-	//		return;
-	//	}
-	//}
-	//if(_cur_sd_obuf!=-1) {
-//		for (auto& x : o_buf[_cur_sd_obuf]) {
-		bool temp = ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] ) / _flit_width) > _num_flits;
-		int flits = temp ? _num_flits : ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] ) / _flit_width);//data part, need to add head flit
-		for (int i = 0; i < flits+1; i++) {
-			Flit* f = Flit::New();
-			f->nn_type = 6;
-			f->head = i == 0 ? true : false;
-			f->tail = i == (flits) ? true : false;
-			if (f->tail) {
-				f->size = temp ? _flit_width * _num_flits: o_buf[_cur_sd_obuf][_sd_mini_tile_id][2];
-				o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] = o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] - f->size;
-				assert(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] >= 0);
-				if (o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] == 0) {
-					o_buf[_cur_sd_obuf].erase(o_buf[_cur_sd_obuf].begin()+ _sd_mini_tile_id-1);
-					if (o_buf[_cur_sd_obuf].empty()) {
-						if (_cur_rc_obuf == -1) {
-							_cur_rc_obuf = _cur_sd_obuf;
-						}
-						_generate_next_sd_obuf_id();
-					}
-				}
-					f->transfer_id = o_buf[_cur_sd_obuf][_sd_mini_tile_id][0];
-			}
-			if (f->head) {
-					if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].size() > 4) {
-						f->mflag = true;
-						for (vector<int>::iterator iter = o_buf[_cur_sd_obuf][_sd_mini_tile_id].begin() + 3; iter != o_buf[_cur_sd_obuf][_sd_mini_tile_id].end(); iter++) {
-							if (*iter != -1)
-								f->mdest.first.push_back(*iter);
-							else {
-								if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == 0) {
-									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = rand() % _ddr_num;
-									f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
-								}
-								else {
-									if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) < _ddr_num - 1) {
-										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) + 1;
-										f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
-									}
-									else if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == _ddr_num - 1) {
-										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = 0;
-										f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
-									}
-								}
-							}
-						}
-					}
-					else if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].size() == 4) {
-						if (o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] != -1) {
-							f->dest = o_buf[_cur_sd_obuf][_sd_mini_tile_id][2];
-						}
-						else {
-							if(id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0])==0){
-								id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = rand() % _ddr_num;
-								f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]]*_ddr_num+rand()%_ddr_rnum];
-							}
-							else {
-								if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) < _ddr_num - 1) {
-									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) + 1;
-									f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum];
-								}
-								else if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == _ddr_num - 1) {
-									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = 0;
-									f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum];
-								}
-							}
-						}
-					}
-			}
-				_flits_sending.push_back(f);
-			}
-		}
+
 
 
 	

@@ -57,9 +57,10 @@ void receive_message(Flit*f);
 DDR(const Configuration& config, int id, const nlohmann::json& j);
 ~DDR() {};
 private:
-	unordered_set<int> _rc_ts;//received transfer
-	unordered_set<int> _rc_rq;//received requirest
-	vector<pair<int, pair<vector<int>, int>>> data_to_send;
+	unordered_set<int> _r_ts_list;//received transfer
+	unordered_set<int> _r_rq_list;//received requirest
+	vector<pair<int, pair<vector<int>, int>>> _data_to_send;
+	unordered_map<int, unordered_set<int>> _ofm_to_ifm;
 };
 
 
