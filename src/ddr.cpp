@@ -52,10 +52,27 @@ todo:
 
 DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 {  
-	for (auto& x : j[-1]["ofmaps"]) {
-			for (auto& y : x["source"]) {
-				_ofm_to_ifm[x].insert(y.get<int>());
+	_ddr_num = config.GetInt("DDR_num");
+	_ddr_id = id;
+	assert(_ddr_id > 0 && _ddr_id <= _ddr_num);
+	for (auto& x : j[-1]["ifmaps"]) {
+			for (auto& y : x["destination"]) {
+				_ifm_to_ofm[x].insert(y.get<int>());
 			}
+	}
+	for (auto& x : j[-1]["ofmaps"]) {
+		_ofm_message[x].first = j[-1]["ofmaps"][x.get<int>()]["source"].size();
+		if (_ddr_id != _ddr_num) {
+			_ofm_message[x].second.first = j[-1]["ofmaps"][x.get<int>()]["size"].get<int>()/_ddr_num;
+		}
+		else {
+			_ofm_message[x].second.first = j[-1]["ofmaps"][x.get<int>()]["size"].get<int>() / _ddr_num + j[-1]["ofmaps"][x.get<int>()]["size"].get<int>() % _ddr_num;
+		}
+		int i = 0;
+		for (auto& y : j[-1]["ofmaps"][x.get<int>()]["destination"]) {
+			_ofm_message[x].second.second[i]=(y["id"].get<int>());
+			i + i + 1;
+		}
 	}
 }  
 
@@ -154,110 +171,19 @@ void DDR::receive_message(Flit*f) {
 		_r_rq_list.insert(f->transfer_id);
 	}
 	if (f->nn_type == 6 && f->end) {
-		
+		unordered_set<int> temp=_ifm_to_ofm[f->transfer_id];
+		for (auto& x : _ifm_to_ofm[f->transfer_id]) {
+			_ofm_message[x].first = _ofm_message[x].first - 1;
+			assert(_ofm_message[x].first >= 0);
+			if (_ofm_message[x].first == 0) {
+				_data_to_send.first=
+			}
+		}
 	}
 	
 
 }
-//todo delete out-of-date data
-void DDR::_buffer_update()
-{
-	for (auto& x : _j[_core_id][_cur_id]["buffer"]) {
-		if (x["new_added"].get<bool>() == true) {
-			for (auto &y : x["source"]) {
-				if (y["type"].get<string>().compare("DRAM") == 0) {
-					_s_rq_list[y.get<int>()][0]=y["id"].get<int>();	
-					_s_rq_list[y.get<int>()][1]=y["size"].get<int>();
-					_s_rq_list[y.get<int>()][2] = 1;
-				}
-				else if (y["type"].get<string>().compare("DRAM") == 1){
-					_s_rq_list[y.get<int>()][0]=-1;
-					_s_rq_list[y.get<int>()][1] = _interleave?_ddr_num:1;//to revise it into ddr group number
-				}
-				_rq_to_sent.insert(y.get<int>());
-				
-			}
-		}
-	}
-}
-//when a new workload comes, we check which data has not been in buffer and construct _left_data.
-bool DDR::_data_ready()
-{
-	_left_data.clear();
-	bool temp = true;
-	if (_core_buffer.count(_j[_core_id][_cur_id]["layer_name"].get<string>()) != 0) {
-		for (auto& x : _j[_core_id][_cur_id]["ifmap"]["transfer_id"]) {
-			if (_core_buffer[_j[_core_id][_cur_id]["layer_name"].get<string>()].count(x.get<int>()) != 0)
-				continue;
-			else {
-				_left_data.insert(x.get<int>());
-				temp = false;
-			}
-		}
-		if (_j[_core_id][_cur_id].count("weight") != 0) {
-			for (auto& x : _j[_core_id][_cur_id]["weight"]["transfer_id"]) {
-				if (_core_buffer[_j[_core_id][_cur_id]["layer_name"].get<string>()].count(x.get<int>()) != 0)
-					continue;
-				else {
-					_left_data.insert(x.get<int>());
-					temp = false;
-				}
-			}
-		}
-	}
-	else {
-		for (auto& x : _j[_core_id][_cur_id]["ifmap"]["transfer_id"]) {
-				_left_data.insert(x.get<int>());
-				temp = false;
-		}
-		if (_j[_core_id][_cur_id].count("weight") != 0) {
-			for (auto& x : _j[_core_id][_cur_id]["weight"]["transfer_id"]) {
-					_left_data.insert(x.get<int>());
-					temp = false;
-			}
-		}
-	}
-	return temp;
-	
-		
-}
-/*
-bool DDR::_test_obuf() {
-	bool temp=false;
-	for (auto& p : o_buf) {
-		temp = temp || p.empty();
-	}
-	return temp;
-}*/
 
-bool DDR::_generate_next_rc_obuf_id() {
-	for (int i = 0; i < _num_obuf; i++) {
-		if (o_buf[i].empty()) {
-			_cur_rc_obuf = i;
-			return true;
-		}
-	}
-	_cur_rc_obuf = -1;
-	return false;
-}
-
-bool DDR::_generate_next_sd_obuf_id() {
-	for (int i = 0; i < _num_obuf; i++) {
-		if (i!=_cur_rc_obuf &&  !o_buf[i].empty()) {
-			_cur_sd_obuf = i;
-			return true;
-		}
-	}
-	_cur_sd_obuf = -1;
-	return false;
-}
-
-void DDR::_write_obuf() {
-	for (auto& x : _tile_size) {
-		o_buf[_cur_rc_obuf].push_back(x.front());
-		x.pop_front();
-	}
-}
 
 
 

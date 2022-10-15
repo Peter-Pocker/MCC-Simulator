@@ -59,8 +59,13 @@ DDR(const Configuration& config, int id, const nlohmann::json& j);
 private:
 	unordered_set<int> _r_ts_list;//received transfer
 	unordered_set<int> _r_rq_list;//received requirest
-	vector<pair<int, pair<vector<int>, int>>> _data_to_send;
-	unordered_map<int, unordered_set<int>> _ofm_to_ifm;
+	vector<pair<int, pair< int,vector<int>>>> _data_to_send;
+	unordered_map<int, unordered_set<int>> _ifm_to_ofm;
+	unordered_map<int, pair<int,pair<int,vector<int>>>> _ofm_message;
+	//int1 is output transfer id, int 2 is input transfer number, int3 ofmap size, int4 destination number
+
+	int _ddr_id;
+	int _ddr_num;
 };
 
 

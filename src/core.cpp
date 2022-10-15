@@ -63,7 +63,7 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _interleave = config.GetInt("interleave")==1 ? true : false;
    _ddr_num = config.GetInt("DDR_num");
    _ddr_id = config.GetIntArray("DDR_routers");
-   _sd_gran = config.GetInt("sending_granularity");
+   _sd_gran = config.GetInt("sending_granularity");//How many times did it take to send the data to destination
    _sd_gran_lb= config.GetInt("sending_granularity_lowerbound");
    _core_id = id;
    _j[to_string(id)] = j[to_string(id)];
@@ -85,6 +85,7 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _ddr_rnum = _ddr_id.size() / _ddr_num;
    _cur_tile_id = 0;
    _sd_mini_tile_id = 0;
+   _mini_tile_num = -1;
    pending = false;
 }  
 
@@ -96,43 +97,40 @@ void Core::_update()
 	_of_size = _j[_core_id][_cur_id]["ofmap"]["size"].get<int>();
 	_cur_tile_id = 0;
 	//try best to use up a packet
-	if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1) / 8)) {
-		_sd_gran_r = ceil(double(_of_size) / (_flit_width * (_num_flits - 1) / 8))>_sd_gran_lb? 
-			ceil(double(_of_size) / (_flit_width * (_num_flits - 1) / 8)) > _sd_gran_lb : _sd_gran_lb;
+	if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1) )) { //-1 because there is a head flit
+		_sd_gran = (_of_size-1) / (_flit_width * (_num_flits - 1))+1>_sd_gran_lb? 
+			(_of_size - 1) / (_flit_width * (_num_flits - 1)) + 1 : _sd_gran_lb;
 	}
-	else {
-		_sd_gran_r = _sd_gran;
-	}
-	_tile_time.assign(_sd_gran_r - 1, ceil(double(_time) / _sd_gran_r));
-	_tile_time.push_back(_of_size-(_sd_gran_r - 1)* ceil(double(_time) / _sd_gran_r));
+
+	_tile_time.assign(_sd_gran - 1, (_time-1) / _sd_gran+1);
+	_tile_time.push_back(_of_size-(_sd_gran - 1)* ((_time-1) / _sd_gran+1));
 	int i = 0;
-	vector<int>temp(3);
-	vector<int>temp1(3);
-	list<vector<int>>temp2;
-	
+	pair<vector<int>,unordered_set<int>>temp;
+	pair<vector<int>, unordered_set<int>>temp1;
+	list<pair<vector<int>, unordered_set<int>>>temp2;
+	temp.first.resize(2);
+	temp1.first.resize(2);
 	for (auto& x : _j[_core_id][_cur_id]["ofmap"]) {
+		_send_data_list[x.get<int>()] = x["size"].get<int>();
 		_cur_wl_rq.insert(x.get<int>());
-		temp[0] = x;
-		temp1[0] = x;
-		temp[1] =ceil(double(_j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>())/ _sd_gran_r);
-		temp1[1] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["size"].get<int>() - temp[2];
-		for (auto& x : _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]) {
+		temp.first[0] = x;
+		temp1.first[0] = x;
+		temp.first[1] =ceil(double(x["size"].get<int>())/ _sd_gran);
+		temp1.first[1] = x["size"].get<int>() - temp.first[1]*(_sd_gran-1);
+		for (auto& x : x["destination"]) {
 			if (x["type"].get<string>().compare("dram")) {
-				temp[2]=-1;
-				temp1[2]=-1;
+				temp.second.insert(-1);
+				temp1.second.insert(-1);
 			}
 			else {
-				temp[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();
-				temp1[2] = _j[_core_id][_cur_id]["ofmap"][x.get<int>()]["destination"]["id"].get<int>();//
+				temp.second.insert(x["id"].get<int>());
+				temp1.second.insert(x["id"].get<int>());//
 			}
 		}
-		temp2.assign(_sd_gran_r - 1, temp);
+		temp2.assign(_sd_gran - 1, temp);
 		temp2.push_back(temp1);
 		_tile_size.push_back(temp2);
 	}
-	temp.clear();
-	temp1.clear();
-	temp2.clear();
 	for (auto& x : _cur_wl_rq) {
 		if (_r_rq_list.count(x)!=0) {
 			_r_rq_list.erase(x);
@@ -349,10 +347,14 @@ bool Core::_generate_next_sd_obuf_id() {
 }
 
 void Core::_write_obuf() {
+	o_buf[_cur_rc_obuf].resize(_tile_size.size());
+	int temp=0;
 	for (auto& x : _tile_size) {
 		o_buf[_cur_rc_obuf].push_back(x.front());
 		x.pop_front();
+		temp = temp + 1;
 	}
+	_mini_tile_num = temp;
 }
 
 void Core::_send_data() {
@@ -363,74 +365,113 @@ void Core::_send_data() {
 	//}
 	//if(_cur_sd_obuf!=-1) {
 //		for (auto& x : o_buf[_cur_sd_obuf]) {
-		bool temp = ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] ) / _flit_width) > _num_flits;
-		int flits = temp ? _num_flits : ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] ) / _flit_width);//data part, need to add head flit
+	if (_sd_mini_tile_id < _mini_tile_num - 1) {
+		_sd_mini_tile_id = _sd_mini_tile_id + 1;
+	}
+	else if (_sd_mini_tile_id = _mini_tile_num - 1) {
+		_sd_mini_tile_id = 0;
+	}
+		bool temp = ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] ) / _flit_width) > _num_flits;
+		int flits = temp ? _num_flits : ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1]) / _flit_width);//data part, need to add head flit
 		for (int i = 0; i < flits+1; i++) {
 			Flit* f = Flit::New();
 			f->nn_type = 6;
 			f->head = i == 0 ? true : false;
 			f->tail = i == (flits) ? true : false;
+			f->size = temp ? _flit_width * _num_flits : o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1];
+			f->transfer_id = o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0];
+			if (f->head) {
+				o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] = o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] - f->size;
+				_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] = _send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] - f->size;
+				assert(_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] >= 0);
+				assert(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] >= 0);
+				
+				if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].second.size() > 1) {
+					f->mflag = true;
+					for (auto& x : o_buf[_cur_sd_obuf][_sd_mini_tile_id].second) {
+						if (x != -1)
+							f->mdest.first.push_back(x);
+						else {
+							if (_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] != 0) {
+								if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]) == 0) {
+									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] = rand() % _ddr_num;
+									f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] * _ddr_num + rand() % _ddr_rnum]);
+								}
+								else {
+									if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]) < _ddr_num - 1) {
+										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] = id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] + 1;
+										f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] * _ddr_num + rand() % _ddr_rnum]);
+									}
+									else if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]) == _ddr_num - 1) {
+										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] = 0;
+										f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] * _ddr_num + rand() % _ddr_rnum]);
+									}
+								}
+							}
+							else {
+								for (i = 0; i <= _ddr_num; i++) {
+									f->mdest.first.push_back(_ddr_id[i * _ddr_num + rand() % _ddr_rnum]);
+								}
+							}
+						}
+					}
+				}
+				else if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].second.size() == 1) {
+					for (auto& x : o_buf[_cur_sd_obuf][_sd_mini_tile_id].second) {
+						if (x != -1) {
+							f->dest = x;
+						}
+						else {
+							if (_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] != 0) {
+								if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]) == 0) {
+									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] = rand() % _ddr_num;
+									f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] * _ddr_num + rand() % _ddr_rnum];
+								}
+								else {
+									if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]) < _ddr_num - 1) {
+										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] = id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]) + 1;
+										f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] * _ddr_num + rand() % _ddr_rnum];
+									}
+									else if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]) == _ddr_num - 1) {
+										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] = 0;
+										f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] * _ddr_num + rand() % _ddr_rnum];
+									}
+								}
+							}
+							else {
+								f->mflag = true;
+								for (i = 0; i <= _ddr_num; i++) {
+									f->mdest.first.push_back(_ddr_id[i * _ddr_num + rand() % _ddr_rnum]);
+								}
+							}
+						}
+					}
+				}
+			}
+			if (_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] == 0) {
+				f->end = true;
+//				_send_data_list.erase(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]);
+			}
 			if (f->tail) {
-				f->size = temp ? _flit_width * _num_flits: o_buf[_cur_sd_obuf][_sd_mini_tile_id][2];
-				o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] = o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] - f->size;
-				assert(o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] >= 0);
-				if (o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] == 0) {
+				if (_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] == 0) {
+					_send_data_list.erase(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]);
+				}
+				if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] == 0) {
 					o_buf[_cur_sd_obuf].erase(o_buf[_cur_sd_obuf].begin()+ _sd_mini_tile_id-1);
-					if (o_buf[_cur_sd_obuf].empty()) {
+					_sd_mini_tile_id = _sd_mini_tile_id - 1;
+					_mini_tile_num = _mini_tile_num - 1;
+					
+					if (o_buf[_cur_sd_obuf].empty()){
+						assert(_mini_tile_num == 0);
 						if (_cur_rc_obuf == -1) {
 							_cur_rc_obuf = _cur_sd_obuf;
 						}
 						_generate_next_sd_obuf_id();
 					}
 				}
-					f->transfer_id = o_buf[_cur_sd_obuf][_sd_mini_tile_id][0];
+					
 			}
-			if (f->head) {
-					if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].size() > 4) {
-						f->mflag = true;
-						for (vector<int>::iterator iter = o_buf[_cur_sd_obuf][_sd_mini_tile_id].begin() + 3; iter != o_buf[_cur_sd_obuf][_sd_mini_tile_id].end(); iter++) {
-							if (*iter != -1)
-								f->mdest.first.push_back(*iter);
-							else {
-								if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == 0) {
-									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = rand() % _ddr_num;
-									f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
-								}
-								else {
-									if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) < _ddr_num - 1) {
-										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) + 1;
-										f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
-									}
-									else if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == _ddr_num - 1) {
-										id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = 0;
-										f->mdest.first.push_back(_ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum]);
-									}
-								}
-							}
-						}
-					}
-					else if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].size() == 4) {
-						if (o_buf[_cur_sd_obuf][_sd_mini_tile_id][2] != -1) {
-							f->dest = o_buf[_cur_sd_obuf][_sd_mini_tile_id][2];
-						}
-						else {
-							if(id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0])==0){
-								id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = rand() % _ddr_num;
-								f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]]*_ddr_num+rand()%_ddr_rnum];
-							}
-							else {
-								if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) < _ddr_num - 1) {
-									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) + 1;
-									f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum];
-								}
-								else if (id_ddr_rel.count(o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]) == _ddr_num - 1) {
-									id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] = 0;
-									f->dest = _ddr_id[id_ddr_rel[o_buf[_cur_sd_obuf][_sd_mini_tile_id][0]] * _ddr_num + rand() % _ddr_rnum];
-								}
-							}
-						}
-					}
-			}
+			
 				_flits_sending.push_back(f);
 			}
 		}

@@ -62,7 +62,6 @@ private:
   void _buffer_update();
   bool _data_ready();
 //  bool _test_obuf();//to test whether there is an empty obuf;
-  void _compute();
   bool _generate_next_rc_obuf_id();
   bool _generate_next_sd_obuf_id();
   void _write_obuf();
@@ -81,9 +80,12 @@ private:
   int _end_tile_time; //ending time of the current tile
   int _cur_tile_id;
   int _time;
+
+
   int _sd_gran;//sending granularity of obuf
-  int _sd_gran_r;//revised sending granularity
   int _sd_gran_lb;//sending granularity lower bound
+
+
   int _cur_rc_obuf;// the obuf which recieves data;
   int _cur_sd_obuf;// the obuf which sends data;
 
@@ -98,7 +100,8 @@ private:
   //
   int _mcast_ddr_rid;//current requirement should go to ith router (0-_ddr_id.size()/ddr_num-1)
   list<int>_tile_time;
-  vector<list<vector<int>>>_tile_size;
+  vector<list<pair<vector<int>, unordered_set<int>>>>_tile_size;
+  int _mini_tile_num;
 
   vector<int> _ucast_ddr_rid;//current data unicast should go to ith router of xth DDR. (i is in 0-_ddr_id.size()/ddr_num-1; x is in 0-ddr_num-1)
 
@@ -115,11 +118,12 @@ private:
   //unordered_map<int, unordered_set<int>> _r_rq_list;//received_request,first int is transfer_id£¬set is core list.(unicast has 1 entry, multicast has multiple entry)
   unordered_set<int> _r_rq_list;
   unordered_set<int> _cur_wl_rq;//the request id of current workload;
+  unordered_map<int, int>_send_data_list;//transfer id, data to sent;
   //unordered_map<int, int> _s_data_list;//sending_data; no need to distinguish unicast and multicast
   //for buffer record
   unordered_map<string, unordered_set<int>> _core_buffer;//layername,corresponding transfer
   unordered_set<int>_left_data;
-  vector<vector<vector<int>>> o_buf;//each entry of vector is an output_buffer
+  vector<vector< pair<vector<int>, unordered_set<int>>>> o_buf;//each entry of vector is an output_buffer;
   //<transfer_id,vector<destination,size>>
   unordered_map<int, int> id_ddr_rel;//ddr relates to transfer_id
   // signal
