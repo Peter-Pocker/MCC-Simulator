@@ -68,9 +68,6 @@ public:
   int  itime;//inject time
   int  atime;//arrival time
 
-  bool to_ddr;
-  bool from_ddr;
-
   int  id;
   int  pid;
   int  oid; //Bransan added to calculate transaction time for multicast
@@ -93,7 +90,7 @@ public:
   //Bransan added dropped status
   bool dropped;
 
-
+  bool from_ddr;
 
   int inter_dest;
   

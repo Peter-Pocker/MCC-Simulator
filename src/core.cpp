@@ -186,7 +186,6 @@ list<Flit*> Core::run(int time, bool empty) {
 			Flit* f = Flit::New();
 			f->nn_type = 5;
 			if(_s_rq_list[p][0]<0 && _interleave){
-				f->to_ddr = true;
 				f->mflag = true;
 			}
 			f->size = _s_rq_list[p][1];
@@ -201,22 +200,14 @@ list<Flit*> Core::run(int time, bool empty) {
 	if (!_requirements_to_send.empty() && empty) {
 		do {
 			vector<int> temp;
-			if (_requirements_to_send.front()->head && _requirements_to_send.front()->to_ddr) {
+			if (_requirements_to_send.front()->head && _requirements_to_send.front()->mflag) {
 				int i = 0;
-				for (int p = rand()%_ddr_rnum; p < _ddr_num; p = p + _ddr_rnum) {
-					temp[i] = _ddr_id[p];
-					i = i + 1;
+				for (i = 0; i <= _ddr_num; i++) {
+					_requirements_to_send.front()->mdest.first.push_back(_ddr_id[i * _ddr_num + rand() % _ddr_rnum]);
 				}
 			}
 			_flits_sending.push_back(_requirements_to_send.front());
 			finish = _requirements_to_send.front()->tail;
-			/*
-			if (finish && _mcast_ddr_rid<_ddr_rnum-1) {
-				_mcast_ddr_rid = _mcast_ddr_rid + 1;
-			}
-			else if (finish && _mcast_ddr_rid == _ddr_rnum - 1) {
-				_mcast_ddr_rid = 0;
-			}*/
 			_requirements_to_send.pop_front();
 			
 		} while (finish);

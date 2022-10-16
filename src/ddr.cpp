@@ -54,6 +54,11 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 {  
 	_ddr_num = config.GetInt("DDR_num");
 	_ddr_id = id;
+	_core_num = config.GetInt("Core_num");
+	_data_to_send.resize(2*_core_num);
+	_num_flits = config.GetInt("packet_size");
+	_flit_width = config.GetInt("flit_width");
+	_interleave = config.GetInt("interleave") == 1 ? true : false;
 	assert(_ddr_id > 0 && _ddr_id <= _ddr_num);
 	for (auto& x : j[-1]["ifmaps"]) {
 			for (auto& y : x["destination"]) {
@@ -80,84 +85,30 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 list<Flit*> DDR::run(int time, bool empty) {
 //	receive_message(f);
 	_flits_sending.clear();
-	if (_wl_fn && _dataready && _cur_rc_obuf!=-1) {
-		_running = true;
-		_wl_fn = false;
-		_dataready = false;
-		_start_wl_time = time;
-		_start_tile_time = time;
-		_end_tile_time = _start_tile_time + _tile_time.front(); //neglect non-integer part
+	if (!_packet_to_send.empty() && empty)
+	{
+		_send_data();
 	}
-	if (_running) {
-		if (_time == _end_tile_time) {
-			_generate_next_rc_obuf_id();
-			if (_cur_rc_obuf == -1) {
-				pending = true;
+	else if (_packet_to_send.empty() && empty && !_data_to_send.empty()) {
+		for (int i = 0; i < _data_to_send.size(); i++) {
+
+			bool temp = ceil(double(_data_to_send.front().second.first) / _flit_width) > _num_flits;
+			int temp1 = temp ? _num_flits * _flit_width : _data_to_send.front().second.first;
+			_packet_to_send.back().second.first = temp ? _num_flits * _flit_width : _data_to_send.front().second.first;//data part, need to add head flit
+			_data_to_send.front().second.first = _data_to_send.front().second.first - _packet_to_send.back().second.first;
+			assert(_data_to_send.front().second.first >= 0);
+			if (_data_to_send.front().second.first == 0) {
+				_packet_to_send.push_back(make_pair(true,_data_to_send.front()));
+				_packet_to_send.back().second.second.first = temp1;
+				_data_to_send.pop_front();
+			}
+			else {
+				_packet_to_send.push_back(make_pair(false, _data_to_send.front()));
+				_packet_to_send.back().second.second.first = temp1;
+				_data_to_send.push_back(_data_to_send.front());
+				_data_to_send.pop_front();
 			}
 		}
-		if ((_time == _end_tile_time && _cur_rc_obuf!=-1)||(pending&& _cur_rc_obuf != -1)) {
-			pending = false;
-			_tile_time.pop_front();
-			_write_obuf();
-			if (_cur_rc_obuf != -1) {
-				_cur_tile_id = _cur_tile_id + 1;
-				_start_tile_time = _time + 1;
-				_end_tile_time = _time + _tile_time.front();
-			}
-		}
-
-		if (_tile_size.empty()) {
-			assert(_tile_time.empty());
-			_wl_fn = true;
-		}
-
-	}
-
-
-	if (_wl_fn) {
-		_running = false;
-		_update();
-		for (auto& p : _rq_to_sent) {
-			Flit* f = Flit::New();
-			f->nn_type = 5;
-			if(_s_rq_list[p][0]<0 && _interleave){
-				f->to_ddr = true;
-				f->mflag = true;
-			}
-			f->size = _s_rq_list[p][1];
-			f->tail = true;
-			f->head = true;
-			f->transfer_id = p;
-			_requirements_to_send.push_back(f);
-		}
-	}
-	//data sending part (connect router)
-	bool finish = false;
-	if (!_requirements_to_send.empty() && empty) {
-		do {
-			vector<int> temp;
-			if (_requirements_to_send.front()->head && _requirements_to_send.front()->to_ddr) {
-				int i = 0;
-				for (int p = rand()%_ddr_rnum; p < _ddr_num; p = p + _ddr_rnum) {
-					temp[i] = _ddr_id[p];
-					i = i + 1;
-				}
-			}
-			_flits_sending.push_back(_requirements_to_send.front());
-			finish = _requirements_to_send.front()->tail;
-			/*
-			if (finish && _mcast_ddr_rid<_ddr_rnum-1) {
-				_mcast_ddr_rid = _mcast_ddr_rid + 1;
-			}
-			else if (finish && _mcast_ddr_rid == _ddr_rnum - 1) {
-				_mcast_ddr_rid = 0;
-			}*/
-			_requirements_to_send.pop_front();
-			
-		} while (finish);
-	}
-	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1) {
-		assert(!o_buf[_cur_sd_obuf].empty());
 		_send_data();
 	}
 	return _flits_sending;
@@ -176,12 +127,36 @@ void DDR::receive_message(Flit*f) {
 			_ofm_message[x].first = _ofm_message[x].first - 1;
 			assert(_ofm_message[x].first >= 0);
 			if (_ofm_message[x].first == 0) {
-				_data_to_send.first=
+				_data_to_send.push_back( make_pair(x, _ofm_message[x].second));//to do when an entry is empty, drain pending_data firstly
 			}
 		}
 	}
-	
 
+
+}
+
+void DDR::_send_data() {
+	int flits = (_packet_to_send.front().second.first - 1) / _flit_width + 1;//data part, need to add head flit
+	for (int i = 0; i < flits + 1; i++) {
+		Flit* f = Flit::New();
+		f->nn_type = 6;
+		f->head = i == 0 ? true : false;
+		f->tail = i == (flits) ? true : false;
+		f->size = _packet_to_send.front().second.second.first;
+		f->transfer_id = _packet_to_send.front().second.first;
+		f->end = _packet_to_send.front().first;
+		f->from_ddr = true;
+		if (f->head) {
+			if (_packet_to_send.front().second.second.second.size() > 1) {
+				f->mflag = true;
+				f->mdest.first = _packet_to_send.front().second.second.second;
+			}
+			else {
+				f->dest = _packet_to_send.front().second.second.second[0];
+			}
+		}
+	}
+	_packet_to_send.pop_front();
 }
 
 

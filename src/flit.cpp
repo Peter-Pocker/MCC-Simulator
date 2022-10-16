@@ -89,9 +89,8 @@ void Flit::Reset()
   data = 0;
   inter_dest = -1; // Bransan added
   mflag = false;
-  layer_name = "";
-  to_ddr = false;
   from_ddr = false;
+  layer_name = "";
 }  
 
 Flit * Flit::New() {
