@@ -61,10 +61,10 @@ private:
 	unordered_set<int> _r_ts_list;//received transfer
 	unordered_set<int> _r_rq_list;//received requirest
 	//When the new data is ready, add to _data_to_send first, wait for _packet_to_send to be empty, and then load the one packet to _packet_to_send
-	deque<pair<int, pair< int,vector<int>>>> _data_to_send;//all data
-	deque<pair<int,pair<int, pair< int, vector<int>>>>> _packet_to_send;//packets_to_send. size is one packet of data. 1st int is end singnal
+	deque<pair<pair<vector<int>, string>,vector<int>>> _data_to_send;//all data
+	deque<pair<pair<bool,pair<vector<int>, string>>, vector<int>>> _packet_to_send;//packets_to_send. size is one packet of data. 1st int is end singnal
 	unordered_map<int, unordered_set<int>> _ifm_to_ofm;
-	unordered_map<int, pair<int,pair<int,vector<int>>>> _ofm_message;
+	unordered_map<int, pair<pair<vector<int>,string>,vector<int>>> _ofm_message;
 	//int1 is output transfer id, int 2 is input transfer number, int3 ofmap size, int4 destination number
 	list<Flit*> _flits_sending;//output for partial packets
 	int _ddr_id;

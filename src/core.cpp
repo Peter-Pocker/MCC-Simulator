@@ -58,7 +58,7 @@ todo:
 Core::Core(const Configuration& config, int id, const nlohmann::json &j)
 {  
    _num_obuf = config.GetInt("num_obuf");
-   _num_flits= config.GetInt("packet_size");
+   _num_flits= config.GetInt("packet_size")-1;//data flits
    _flit_width = config.GetInt("flit_width");
    _interleave = config.GetInt("interleave")==1 ? true : false;
    _ddr_num = config.GetInt("DDR_num");
@@ -104,9 +104,9 @@ void Core::_update()
 		_cur_tile_id = 0;
 		_layer_name = _j[_core_id][_cur_id]["layer_name"].get<string>();
 		//try best to use up a packet
-		if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1))) { //-1 because there is a head flit
-			_sd_gran = (_of_size - 1) / (_flit_width * (_num_flits - 1)) + 1 > _sd_gran_lb ?
-				(_of_size - 1) / (_flit_width * (_num_flits - 1)) + 1 : _sd_gran_lb;
+		if (_of_size / _sd_gran < (_flit_width * _num_flits )) { 
+			_sd_gran = (_of_size - 1) / (_flit_width * _num_flits ) + 1 > _sd_gran_lb ?
+				(_of_size - 1) / (_flit_width * _num_flits ) + 1 : _sd_gran_lb;
 		}
 
 		_tile_time.assign(_sd_gran - 1, (_time - 1) / _sd_gran + 1);
@@ -390,7 +390,7 @@ void Core::_send_data() {
 	}
 		bool temp = ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] ) / _flit_width) > _num_flits;
 		int flits = temp ? _num_flits : ceil(double(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1]) / _flit_width);//data part, need to add head flit
-		for (int i = 0; i < flits+1; i++) {
+		for (int i = 0; i < flits+1; i++) {//+1 because there is a head
 			Flit* f = Flit::New();
 			f->nn_type = 6;
 			f->head = i == 0 ? true : false;
