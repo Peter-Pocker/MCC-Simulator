@@ -70,12 +70,14 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
 
     _nodes = _net[0]->NumNodes();
     _routers = _net[0]->NumRouters();
+    _cores = config.GetIntArray("Core_routers").size();
+    _ddrs = config.GetInt("DDR_num");
     //Bransan add _nhubs
     _nhubs = _net[0]->NumHubs();
 
     _vcs = config.GetInt("num_vcs");
     _subnets = config.GetInt("subnets");
-
+    ddr_routers = config.GetIntArray("DDR_routers");
     _mcast_switch = config.GetInt("mcast_switch");
     int mcast_percent = config.GetInt("mcast_percent");
     _num_mcast_dests = config.GetInt("num_mcast_dests");
@@ -387,6 +389,20 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     }
     for (auto& p : config.GetIntArray("Core_routers")) {
         core_id.insert(p);
+    }
+
+    for (int i = 0; i < _ddrs; i++) {
+
+        _ddr[i] = new DDR(config, i, j);
+    }
+    
+    int temp_r = ddr_routers.size() / _ddrs;
+    assert(temp_r != (ddr_routers.size() + 1) / ddr_num);
+    int temp_p =0;
+    for (auto& p : ddr_routers) {
+        int ddr_id_p = temp_r / temp_p;
+        ddr_id[p]=ddr_id_p;
+        temp_p = temp_p + 1;
     }
 
     //seed the network
@@ -832,22 +848,24 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
                        << ")." << endl;
         }
         *gWatchOut << GetSimTime() << " | "
-                   << "node" << dest << " | "
-                   << "Retiring flit " << f->id
-                   << " (packet " << f->pid
-                   << ", src = " << f->src
-                   << ", dest = " << f->dest
-                   << ", hops = " << f->hops
-                   << ", flat = " << f->atime - f->itime
-                   << ")." << endl;
-        if ( f->watch)
-        {
-            *gWatchOut  << " multi Destinations are: ";
+            << "node" << dest << " | "
+            << "Retiring flit " << f->id
+            << " (packet " << f->pid
+            << ", src = " << f->src
+            << ", dest = " << f->dest
+            << ", nn_type ="<<f->nn_type
+            << ", transfer_id = " << f->transfer_id
+            << ", from_ddr =" <<f->from_ddr
+            << ", size =" <<f->size
+            << " layer_name =" << f->layer_name
+            << ", hops = " << f->hops
+            << ", flat = " << f->atime - f->itime
+            << ")." << endl;
+         *gWatchOut  << " multi Destinations are: ";
             for (int i = 0; i < f->mdest.first.size(); i++) {
                 *gWatchOut << f->mdest.first[i] << " " << endl;
             }
-            *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << f->src << endl;
-        }
+         *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << f->src << endl;
     }
 
     if (!f->dropped)
@@ -1332,6 +1350,8 @@ void TrafficManager::_GeneratePacket(int source, int stype,
                        << "Enqueuing flit " << f->id
                        << " (packet " << f->pid
                        << ") at time " << timer
+                       << " transfer_id = "<<f->transfer_id
+                       << " layer_name =" <<f->layer_name
                        << " to node " << f->dest
                        << " | mcast " << f->mflag
                        << "." << endl;
@@ -1352,10 +1372,17 @@ void TrafficManager::_Inject()
     for (int i = 0; i < _nodes; ++i)
     {
         //int input = rand_inputs[i];
-        for (int c = 0; c < _classes; ++c)
-        {
-            if (core_id.count(i) > 0) {
-                list<Flit*> flits = _core[i]->run(_time, _partial_packets[i][c].empty());
+        if (core_id.count(i) > 0 || ddr_id.count(i)>0) {
+            assert(!(core_id.count(i) > 0 && ddr_id.count(i) > 0));
+             for (int c = 0; c < _classes; ++c){
+                 list<Flit*> flits;
+                 if (core_id.count(i) > 0) {
+                      flits = _core[i]->run(_time, _partial_packets[i][c].empty());
+                 }
+                 else if (ddr_id.count(i) > 0) {
+                     flits = _ddr[ddr_id[i]]->run(_time, _partial_packets[i][c].empty());
+                 }
+
                 int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;
                 if (!flits.empty()) {
                     int pid = 0;
@@ -1464,7 +1491,7 @@ void TrafficManager::_Inject()
                         }
                     }
                 }
-            }
+             }
             }
         }
  }
@@ -1831,26 +1858,29 @@ void TrafficManager::_Step()
             map<int, Flit *>::const_iterator iter = flits[subnet].find(n);
             if (iter != flits[subnet].end())
             {
-                Flit *const f = iter->second;
+                Flit* const f = iter->second;
 
                 f->atime = _time;
                 if (f->watch || (_routers_to_watch.count(n) > 0))
                 {
                     *gWatchOut << GetSimTime() << " | "
-                               << "node" << n << " | "
-                               << "Injecting credit for VC " << f->vc
-                               << " into subnet " << subnet
-                               << "." << endl;
+                        << "node" << n << " | "
+                        << "Injecting credit for VC " << f->vc
+                        << " into subnet " << subnet
+                        << "." << endl;
                 }
-                Credit *const c = Credit::New();
+                Credit* const c = Credit::New();
                 c->vc.insert(f->vc);
                 _net[subnet]->WriteCredit(c, n);
 
 #ifdef TRACK_FLOWS
                 ++_ejected_flits[f->cl][n];
-#endif          assert(core_id.count(n)>0);
-                if (f->tail) {
+#endif          
+                if ((core_id.count(n) && f->tail)) {
                     _core[n]->receive_message(f);
+                }
+                else if (ddr_id.count(n) > 0) {
+                    _ddr[ddr_id[n]]->receive_message(f);
                 }
                 _RetireFlit(f, n);
             

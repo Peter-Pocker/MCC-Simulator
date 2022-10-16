@@ -44,6 +44,7 @@
 #include "outputset.hpp"
 #include "injection.hpp"
 #include "Core.hpp"
+#include "ddr.hpp"
 #include "json.hpp"
 
 //register the requests to a node
@@ -60,10 +61,12 @@ private:
 protected:
   int _nodes;
   int _routers;
+  int _cores;
+  int _ddrs;
   int _vcs;
   //added by Jingwei
   bool stop;
-  
+  vector<int> ddr_routers;
   //Bransan added num of hubs
   int _nhubs;
  
@@ -73,6 +76,8 @@ protected:
   vector<vector<Hub *> > _hub; //Bransan added vector for hubs
   vector<Core*> _core;
   unordered_set<int>core_id;
+  vector<DDR*> _ddr;
+  unordered_map<int,int>ddr_id;//record which router relates to which ddr
 
   // ============ Traffic ============ 
 

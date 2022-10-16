@@ -55,7 +55,6 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	_ddr_num = config.GetInt("DDR_num");
 	_ddr_id = id;
 	_core_num = config.GetInt("Core_num");
-	_data_to_send.resize(2*_core_num);
 	_num_flits = config.GetInt("packet_size");
 	_flit_width = config.GetInt("flit_width");
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
@@ -155,6 +154,7 @@ void DDR::_send_data() {
 				f->dest = _packet_to_send.front().second.second.second[0];
 			}
 		}
+		_flits_sending.push_back(f);
 	}
 	_packet_to_send.pop_front();
 }

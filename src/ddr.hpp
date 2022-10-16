@@ -25,8 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _CORE_HPP_
-#define _CORE_HPP_
+#ifndef _DDR_HPP_
+#define _DDR_HPP_
 
 #include <iostream>
 #include <stack>
