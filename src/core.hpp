@@ -80,6 +80,7 @@ private:
   int _end_tile_time; //ending time of the current tile
   int _cur_tile_id;
   int _time;
+  string _layer_name;
 
 
   int _sd_gran;//sending granularity of obuf
@@ -103,7 +104,7 @@ private:
   vector<list<pair<vector<int>, unordered_set<int>>>>_tile_size;
   int _mini_tile_num;
 
-  vector<int> _ucast_ddr_rid;//current data unicast should go to ith router of xth DDR. (i is in 0-_ddr_id.size()/ddr_num-1; x is in 0-ddr_num-1)
+  //vector<int> _ucast_ddr_rid;//current data unicast should go to ith router of xth DDR. (i is in 0-_ddr_id.size()/ddr_num-1; x is in 0-ddr_num-1)
 
   vector<int>_ddr_id;
   list<Flit*> _requirements_to_send;//internal partial packets

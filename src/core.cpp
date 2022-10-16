@@ -81,7 +81,6 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _cur_rc_obuf=0;
    _cur_sd_obuf=-1;
    _mcast_ddr_rid = 0;
-   _ucast_ddr_rid.assign(4,0);
    _ddr_rnum = _ddr_id.size() / _ddr_num;
    _cur_tile_id = 0;
    _sd_mini_tile_id = 0;
@@ -96,6 +95,7 @@ void Core::_update()
 	_cp_time = _j[_core_id][_cur_id]["time"].get<int>();
 	_of_size = _j[_core_id][_cur_id]["ofmap"]["size"].get<int>();
 	_cur_tile_id = 0;
+	_layer_name = _j[_core_id][_cur_id]["layer_name"].get<string>();
 	//try best to use up a packet
 	if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1) )) { //-1 because there is a head flit
 		_sd_gran = (_of_size-1) / (_flit_width * (_num_flits - 1))+1>_sd_gran_lb? 
@@ -250,6 +250,7 @@ void Core::_buffer_update()
 	for (auto& x : _j[_core_id][_cur_id]["buffer"]) {
 		if (x["new_added"].get<bool>() == true) {
 			for (auto &y : x["source"]) {
+				_s_rq_list[y.get<int>()].resize(3);
 				if (y["type"].get<string>().compare("DRAM") == 0) {
 					_s_rq_list[y.get<int>()][0]=y["id"].get<int>();	
 					_s_rq_list[y.get<int>()][1]=y["size"].get<int>();
@@ -371,6 +372,7 @@ void Core::_send_data() {
 			f->tail = i == (flits) ? true : false;
 			f->size = temp ? _flit_width * _num_flits : o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1];
 			f->transfer_id = o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0];
+			f->layer_name = _layer_name;
 			if (f->head) {
 				o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] = o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] - f->size;
 				_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] = _send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] - f->size;
