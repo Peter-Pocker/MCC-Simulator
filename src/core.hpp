@@ -52,6 +52,7 @@ list<Flit*> run(int time,bool empty);
 
 
 void _send_data();
+vector<int> _check_end();
 //Flit* send_requirement();
 void receive_message(Flit*f);
 Core(const Configuration& config, int id, const nlohmann::json& j);
@@ -68,6 +69,7 @@ private:
   nlohmann::json _j;
   int _core_id;
   int _cur_wl_id; // id of current wl
+  int _wl_num;//total workloads
   int _cur_id; //order of current wl
   bool _dataready;  //whether all data of this workload is ready
   int _cp_time;//compute time of current workload
@@ -81,7 +83,9 @@ private:
   int _cur_tile_id;
   int _time;
   string _layer_name;
-
+  bool _wl_end;//all workloads are end
+  bool _overall_end;//all data sending end
+  int _end_time;
 
   int _sd_gran;//sending granularity of obuf
   int _sd_gran_lb;//sending granularity lower bound
@@ -128,6 +132,7 @@ private:
   //<transfer_id,vector<destination,size>>
   unordered_map<int, int> id_ddr_rel;//ddr relates to transfer_id
   // signal
+  vector<int>_end_message;
   bool _wl_fn;//workload finish
   bool _all_fn;//all workload finsh
 

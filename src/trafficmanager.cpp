@@ -42,6 +42,7 @@
 #include "packet_reply_info.hpp"
 // #include <random>
 #include <algorithm>
+using namespace std;
 
 using json = nlohmann::json;
 TrafficManager *TrafficManager::New(Configuration const &config,
@@ -2353,10 +2354,13 @@ bool TrafficManager::Run()
         while (!stop)
         {
             _Step();
-            if (_time > 300)
+            if (_time % 300 == 0) {
                 stop = true;
+                for (auto& p : core_id) {
+                    stop = stop && _core[p]->_check_end()[0];
+                }
+            }
         }
-
         UpdateStats();
         DisplayStats();
         _sim_state = draining;

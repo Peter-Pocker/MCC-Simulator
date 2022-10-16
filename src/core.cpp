@@ -67,6 +67,8 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _sd_gran_lb= config.GetInt("sending_granularity_lowerbound");
    _core_id = id;
    _j[to_string(id)] = j[to_string(id)];
+   _wl_num = _j[to_string(id)].size();
+   _end_message.resize(2);
    _cur_wl_id = -1;
    _cur_id = -1;
    _start_wl_time = -1;
@@ -91,61 +93,66 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
 void Core::_update()
 {
 	_cur_id = _cur_id + 1;
-	_cur_wl_id = _j[_core_id][_cur_id]["id"].get<int>();
-	_cp_time = _j[_core_id][_cur_id]["time"].get<int>();
-	_of_size = _j[_core_id][_cur_id]["ofmap"]["size"].get<int>();
-	_cur_tile_id = 0;
-	_layer_name = _j[_core_id][_cur_id]["layer_name"].get<string>();
-	//try best to use up a packet
-	if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1) )) { //-1 because there is a head flit
-		_sd_gran = (_of_size-1) / (_flit_width * (_num_flits - 1))+1>_sd_gran_lb? 
-			(_of_size - 1) / (_flit_width * (_num_flits - 1)) + 1 : _sd_gran_lb;
+	assert(_cur_id <= _wl_num);
+	if (_cur_id == _wl_num) {
+		_wl_end = true;
 	}
+	else {
+		_cur_wl_id = _j[_core_id][_cur_id]["id"].get<int>();
+		_cp_time = _j[_core_id][_cur_id]["time"].get<int>();
+		_of_size = _j[_core_id][_cur_id]["ofmap"]["size"].get<int>();
+		_cur_tile_id = 0;
+		_layer_name = _j[_core_id][_cur_id]["layer_name"].get<string>();
+		//try best to use up a packet
+		if (_of_size / _sd_gran < (_flit_width * (_num_flits - 1))) { //-1 because there is a head flit
+			_sd_gran = (_of_size - 1) / (_flit_width * (_num_flits - 1)) + 1 > _sd_gran_lb ?
+				(_of_size - 1) / (_flit_width * (_num_flits - 1)) + 1 : _sd_gran_lb;
+		}
 
-	_tile_time.assign(_sd_gran - 1, (_time-1) / _sd_gran+1);
-	_tile_time.push_back(_of_size-(_sd_gran - 1)* ((_time-1) / _sd_gran+1));
-	int i = 0;
-	pair<vector<int>,unordered_set<int>>temp;
-	pair<vector<int>, unordered_set<int>>temp1;
-	list<pair<vector<int>, unordered_set<int>>>temp2;
-	temp.first.resize(2);
-	temp1.first.resize(2);
-	for (auto& x : _j[_core_id][_cur_id]["ofmap"]) {
-		_send_data_list[x.get<int>()] = x["size"].get<int>();
-		_cur_wl_rq.insert(x.get<int>());
-		temp.first[0] = x;
-		temp1.first[0] = x;
-		temp.first[1] =ceil(double(x["size"].get<int>())/ _sd_gran);
-		temp1.first[1] = x["size"].get<int>() - temp.first[1]*(_sd_gran-1);
-		for (auto& x : x["destination"]) {
-			if (x["type"].get<string>().compare("dram")) {
-				temp.second.insert(-1);
-				temp1.second.insert(-1);
+		_tile_time.assign(_sd_gran - 1, (_time - 1) / _sd_gran + 1);
+		_tile_time.push_back(_of_size - (_sd_gran - 1) * ((_time - 1) / _sd_gran + 1));
+		int i = 0;
+		pair<vector<int>, unordered_set<int>>temp;
+		pair<vector<int>, unordered_set<int>>temp1;
+		list<pair<vector<int>, unordered_set<int>>>temp2;
+		temp.first.resize(2);
+		temp1.first.resize(2);
+		for (auto& x : _j[_core_id][_cur_id]["ofmap"]) {
+			_send_data_list[x.get<int>()] = x["size"].get<int>();
+			_cur_wl_rq.insert(x.get<int>());
+			temp.first[0] = x;
+			temp1.first[0] = x;
+			temp.first[1] = ceil(double(x["size"].get<int>()) / _sd_gran);
+			temp1.first[1] = x["size"].get<int>() - temp.first[1] * (_sd_gran - 1);
+			for (auto& x : x["destination"]) {
+				if (x["type"].get<string>().compare("dram")) {
+					temp.second.insert(-1);
+					temp1.second.insert(-1);
+				}
+				else {
+					temp.second.insert(x["id"].get<int>());
+					temp1.second.insert(x["id"].get<int>());//
+				}
 			}
-			else {
-				temp.second.insert(x["id"].get<int>());
-				temp1.second.insert(x["id"].get<int>());//
+			temp2.assign(_sd_gran - 1, temp);
+			temp2.push_back(temp1);
+			_tile_size.push_back(temp2);
+		}
+		for (auto& x : _cur_wl_rq) {
+			if (_r_rq_list.count(x) != 0) {
+				_r_rq_list.erase(x);
+				_cur_wl_rq.erase(x);
 			}
 		}
-		temp2.assign(_sd_gran - 1, temp);
-		temp2.push_back(temp1);
-		_tile_size.push_back(temp2);
+		_buffer_update();
+		_dataready = _left_data.empty() && _data_ready();
 	}
-	for (auto& x : _cur_wl_rq) {
-		if (_r_rq_list.count(x)!=0) {
-			_r_rq_list.erase(x);
-			_cur_wl_rq.erase(x);
-		}
-	}
-	_buffer_update();
-	_dataready = _left_data.empty() &&_data_ready();
-
 }
 
 list<Flit*> Core::run(int time, bool empty) {
 //	receive_message(f);
 	_flits_sending.clear();
-	if (_wl_fn && _dataready && _cur_rc_obuf!=-1) {
+	if (_wl_fn && _dataready && _cur_rc_obuf!=-1&&!_wl_end) {
 		_running = true;
 		_wl_fn = false;
 		_dataready = false;
@@ -153,7 +160,7 @@ list<Flit*> Core::run(int time, bool empty) {
 		_start_tile_time = time;
 		_end_tile_time = _start_tile_time + _tile_time.front(); //neglect non-integer part
 	}
-	if (_running) {
+	if (_running && !_wl_end) {
 		if (_time == _end_tile_time) {
 			_generate_next_rc_obuf_id();
 			if (_cur_rc_obuf == -1) {
@@ -178,26 +185,27 @@ list<Flit*> Core::run(int time, bool empty) {
 
 	}
 
-
-	if (_wl_fn) {
+	if (_wl_fn && !_wl_end) {
 		_running = false;
 		_update();
-		for (auto& p : _rq_to_sent) {
-			Flit* f = Flit::New();
-			f->nn_type = 5;
-			if(_s_rq_list[p][0]<0 && _interleave){
-				f->mflag = true;
+		if (!_wl_end) {
+			for (auto& p : _rq_to_sent) {
+				Flit* f = Flit::New();
+				f->nn_type = 5;
+				if (_s_rq_list[p][0] < 0 && _interleave) {
+					f->mflag = true;
+				}
+				f->size = _s_rq_list[p][1];
+				f->tail = true;
+				f->head = true;
+				f->transfer_id = p;
+				_requirements_to_send.push_back(f);
 			}
-			f->size = _s_rq_list[p][1];
-			f->tail = true;
-			f->head = true;
-			f->transfer_id = p;
-			_requirements_to_send.push_back(f);
 		}
 	}
 	//data sending part (connect router)
 	bool finish = false;
-	if (!_requirements_to_send.empty() && empty) {
+	if (!_requirements_to_send.empty() && empty &&!_wl_end) {
 		do {
 			vector<int> temp;
 			if (_requirements_to_send.front()->head && _requirements_to_send.front()->mflag) {
@@ -212,9 +220,19 @@ list<Flit*> Core::run(int time, bool empty) {
 			
 		} while (finish);
 	}
-	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1&& _cur_wl_rq.empty()) {
+	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1&& _cur_wl_rq.empty()&&!_overall_end) {
 		assert(!o_buf[_cur_sd_obuf].empty());
 		_send_data();
+		if (_wl_end) {
+			bool temp = true;
+			for (auto& p : o_buf) {
+				temp = temp && p.empty();
+			}
+			if (temp) {
+				_overall_end = true;
+				_end_time = time;
+			}
+		}
 	}
 	return _flits_sending;
 }
@@ -338,6 +356,13 @@ bool Core::_generate_next_sd_obuf_id() {
 	return false;
 }
 
+vector<int> Core::_check_end() {
+	if (_overall_end) {
+		_end_message[0] = _overall_end ? 1 : 0;
+		_end_message[1] = _end_time;
+	}
+	return _end_message;
+}
 void Core::_write_obuf() {
 	o_buf[_cur_rc_obuf].resize(_tile_size.size());
 	int temp=0;
