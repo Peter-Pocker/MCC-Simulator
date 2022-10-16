@@ -59,23 +59,23 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	_flit_width = config.GetInt("flit_width");
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
 	assert(_ddr_id > 0 && _ddr_id <= _ddr_num);
-	for (auto& x : j[-1]["ifmaps"]) {
+	for (auto& x : j[-1]["ifmap"]) {
 			for (auto& y : x["destination"]) {
 				_ifm_to_ofm[x].insert(y.get<int>());
 			}
 	}
-	for (auto& x : j[-1]["ofmaps"]) {
+	for (auto& x : j[-1]["ofmap"]) {
 		_ofm_message[x].first.first.resize(2);
-		_ofm_message[x].first.first[0] = j[-1]["ofmaps"][x.get<int>()]["source"].size();
+		_ofm_message[x].first.first[0] = j[-1]["ofmap"][x.get<int>()]["source"].size();
 		if (_ddr_id != _ddr_num) {
-			_ofm_message[x].first.first[1] = j[-1]["ofmaps"][x.get<int>()]["size"].get<int>()/_ddr_num;
+			_ofm_message[x].first.first[1] = j[-1]["ofmap"][x.get<int>()]["size"].get<int>()/_ddr_num;
 		}
 		else {
-			_ofm_message[x].first.first[1] = j[-1]["ofmaps"][x.get<int>()]["size"].get<int>() / _ddr_num + j[-1]["ofmaps"][x.get<int>()]["size"].get<int>() % _ddr_num;
+			_ofm_message[x].first.first[1] = j[-1]["ofmap"][x.get<int>()]["size"].get<int>() / _ddr_num + j[-1]["ofmap"][x.get<int>()]["size"].get<int>() % _ddr_num;
 		}
-		_ofm_message[x].first.second = j[-1]["ofmaps"][x.get<int>()]["layer_name"];
+		_ofm_message[x].first.second = j[-1]["ofmap"][x.get<int>()]["layer_name"];
 		int i = 0;
-		for (auto& y : j[-1]["ofmaps"][x.get<int>()]["destination"]) {
+		for (auto& y : j[-1]["ofmap"][x.get<int>()]["destination"]) {
 			_ofm_message[x].second[i]=(y["id"].get<int>());
 			i + i + 1;
 		}
@@ -120,18 +120,31 @@ list<Flit*> DDR::run(int time, bool empty) {
 void DDR::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
 	if (f->nn_type == 5) {
-		_r_rq_list.insert(f->transfer_id);
+		if (!_ready_list.count(f->transfer_id) > 0) {
+			_r_rq_list.insert(f->transfer_id);
+		}
+		else if(_ready_list.count(f->transfer_id) > 0 || _ofm_message[f->transfer_id].first.first[0]==0){
+			vector<int> temp(2);
+			temp[0] = f->transfer_id;
+			temp[1] = _ofm_message[f->transfer_id].first.first[1];
+			_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[f->transfer_id].first.second), _ofm_message[f->transfer_id].second));//to do when an entry is empty, drain pending_data firstly
+		}
 	}
 	if (f->nn_type == 6 && f->end) {
 		unordered_set<int> temp=_ifm_to_ofm[f->transfer_id];
-		for (auto& x : _ifm_to_ofm[f->transfer_id]) {
-			_ofm_message[x].first.first[0] = _ofm_message[x].first.first[0] - 1;
-			assert(_ofm_message[x].first.first[0]);
-			if (_ofm_message[x].first.first[0] == 0) {
-				vector<int> temp(2);
-				temp[0] = x;
-				temp[1] = _ofm_message[x].first.first[1];
-				_data_to_send.push_back( make_pair(make_pair(temp, _ofm_message[x].first.second),_ofm_message[x].second));//to do when an entry is empty, drain pending_data firstly
+		if (!_ifm_to_ofm[f->transfer_id].empty()) {
+			for (auto& x : _ifm_to_ofm[f->transfer_id]) {
+				_ofm_message[x].first.first[0] = _ofm_message[x].first.first[0] - 1;
+				assert(_ofm_message[x].first.first[0]);
+				if (_ofm_message[x].first.first[0] == 0) {
+					_ready_list.insert(x);
+					if (_r_rq_list.count(x) > 0) {
+						vector<int> temp(2);
+						temp[0] = x;
+						temp[1] = _ofm_message[x].first.first[1];
+						_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[x].first.second), _ofm_message[x].second));//to do when an entry is empty, drain pending_data firstly
+					}
+				}
 			}
 		}
 	}
