@@ -124,14 +124,14 @@ void Core::_update()
 			temp1.first[0] = x;
 			temp.first[1] = ceil(double(x["size"].get<int>()) / _sd_gran);
 			temp1.first[1] = x["size"].get<int>() - temp.first[1] * (_sd_gran - 1);
-			for (auto& x : x["destination"]) {
-				if (x["type"].get<string>().compare("dram")) {
+			for (auto& y : x["destination"]) {
+				if (x["type"].get<string>().compare("DRAM")==0) {
 					temp.second.insert(-1);
 					temp1.second.insert(-1);
 				}
 				else {
-					temp.second.insert(x["id"].get<int>());
-					temp1.second.insert(x["id"].get<int>());//
+					temp.second.insert(y["id"].get<int>());
+					temp1.second.insert(y["id"].get<int>());//
 				}
 			}
 			temp2.assign(_sd_gran - 1, temp);
@@ -209,8 +209,7 @@ list<Flit*> Core::run(int time, bool empty) {
 		do {
 			vector<int> temp;
 			if (_requirements_to_send.front()->head && _requirements_to_send.front()->mflag) {
-				int i = 0;
-				for (i = 0; i <= _ddr_num; i++) {
+				for (int i = 0; i <= _ddr_num; i++) {
 					_requirements_to_send.front()->mdest.first.push_back(_ddr_id[i * _ddr_num + rand() % _ddr_rnum]);
 				}
 			}
@@ -254,7 +253,7 @@ void Core::receive_message(Flit*f) {
 	if (f->nn_type == 6 && f->end) {
 		_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - 1;
 		if (_s_rq_list[f->transfer_id][2] == 0) {
-			assert(_s_rq_list[f->transfer_id][1] = 0);
+			assert(_s_rq_list[f->transfer_id][1] == 0);
 			_core_buffer[f->layer_name].insert(f->transfer_id);
 		}
 		_left_data.erase(f->transfer_id);
@@ -269,14 +268,15 @@ void Core::_buffer_update()
 		if (x["new_added"].get<bool>() == true) {
 			for (auto &y : x["source"]) {
 				_s_rq_list[y.get<int>()].resize(3);
-				if (y["type"].get<string>().compare("DRAM") == 0) {
+				if (y["type"].get<string>().compare("DRAM") != 0) {
 					_s_rq_list[y.get<int>()][0]=y["id"].get<int>();	
 					_s_rq_list[y.get<int>()][1]=y["size"].get<int>();
 					_s_rq_list[y.get<int>()][2] = 1;
 				}
-				else if (y["type"].get<string>().compare("DRAM") == 1){
+				else{
 					_s_rq_list[y.get<int>()][0]=-1;
-					_s_rq_list[y.get<int>()][1] = _interleave?_ddr_num:1;//to revise it into ddr group number
+					_s_rq_list[y.get<int>()][1] = y["size"].get<int>();
+					_s_rq_list[y.get<int>()][2] = _interleave?_ddr_num:1;//to revise it into ddr group number
 				}
 				_rq_to_sent.insert(y.get<int>());
 				

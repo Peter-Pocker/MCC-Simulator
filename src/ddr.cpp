@@ -60,13 +60,13 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
 	assert(_ddr_id > 0 && _ddr_id <= _ddr_num);
 	for (auto& x : j[-1]["ifmap"]) {
-			for (auto& y : x["destination"]) {
+			for (auto& y : x["related_ofmap"]) {
 				_ifm_to_ofm[x].insert(y.get<int>());
 			}
 	}
 	for (auto& x : j[-1]["ofmap"]) {
 		_ofm_message[x].first.first.resize(2);
-		_ofm_message[x].first.first[0] = j[-1]["ofmap"][x.get<int>()]["source"].size();
+		_ofm_message[x].first.first[0] = j[-1]["ofmap"][x.get<int>()]["related_ifmap"].size();
 		if (_ddr_id != _ddr_num) {
 			_ofm_message[x].first.first[1] = j[-1]["ofmap"][x.get<int>()]["size"].get<int>()/_ddr_num;
 		}

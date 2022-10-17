@@ -383,7 +383,7 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _hub[i] = _net[i]->GetHubs();
     }
     json j;
-    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\IR.json") >> j;
+    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\IR_exp.json") >> j;
     for (int i = 0; i < _nodes; i++) {
         
         _core[i] = new Core(config, i, j);

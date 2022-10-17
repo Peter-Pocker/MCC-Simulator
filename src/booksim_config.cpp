@@ -66,12 +66,12 @@ BookSimConfig::BookSimConfig( )
   _int_map["DDR_fq"] = 16; //frequency / gbps
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 2;
-  _int_map["Core_num"] = 4;
-  AddStrField("Core_routers", "{5,6,9,10}");//these location has cores, some routers can be idle
+  _int_map["Core_num"] = 1;
+  AddStrField("Core_routers", "{4}");//these location has cores, some routers can be idle
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
 
   //after the DDR receives its requirement, it can send data. 
-  AddStrField("DDR_routers", "4,8,7,11");//grouped by ddr numbers. 
+  AddStrField("DDR_routers", "0,3,2,5");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
 
@@ -85,7 +85,7 @@ BookSimConfig::BookSimConfig( )
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
-  _int_map["k"] = 4; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
+  _int_map["k"] = 3; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 0; // Bransan number of wireless routers
