@@ -762,6 +762,9 @@ TrafficManager::~TrafficManager()
     for (int i = 0; i < _nodes; i++) {
         delete _core[i];
     }
+    for (int i = 0; i < _ddrs; i++) {
+        delete _ddr[i];
+    }
 
     for (int c = 0; c < _classes; ++c)
     {
@@ -2354,6 +2357,7 @@ bool TrafficManager::Run()
         while (!stop)
         {
             _Step();
+            
             if (_time % 300 == 0) {
                 stop = true;
                 for (auto& p : core_id) {
