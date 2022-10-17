@@ -48,10 +48,8 @@ using namespace std;
 class Core {
 
 public:
-list<Flit*> run(int time,bool empty);
-
-
-void _send_data();
+void run(int time,bool empty,list<Flit*>&_flits_sending);
+void _send_data(list<Flit*>& _flits_sending);
 vector<int> _check_end();
 //Flit* send_requirement();
 void receive_message(Flit*f);
@@ -67,7 +65,7 @@ private:
   bool _generate_next_sd_obuf_id();
   void _write_obuf();
   nlohmann::json _j;
-  int _core_id;
+  string _core_id;
   int _cur_wl_id; // id of current wl
   int _wl_num;//total workloads
   int _cur_id; //order of current wl
@@ -113,7 +111,7 @@ private:
   vector<int>_ddr_id;
   list<Flit*> _requirements_to_send;//internal partial packets
   list<Flit*> _data_to_send;//internal partial packets
-  list<Flit*> _flits_sending;//output for partial packets
+  //list<Flit*> _flits_sending;//output for partial packets
  // std::unordered_map<int,int> wl_map;
   //for loading data (double ckeck)
   unordered_set<int> _rq_to_sent;//transfer_id

@@ -71,7 +71,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
 
   //after the DDR receives its requirement, it can send data. 
-  AddStrField("DDR_routers", "0,3,2,5");//grouped by ddr numbers. 
+  AddStrField("DDR_routers", "{0,3,2,5}");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
 

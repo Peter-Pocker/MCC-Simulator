@@ -91,6 +91,7 @@ public:
   bool dropped;
 
   bool from_ddr;
+  bool to_ddr;
 
   int inter_dest;
   

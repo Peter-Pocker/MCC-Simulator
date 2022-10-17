@@ -33,6 +33,7 @@
 #include <vector>
 #include <utility>
 #include <list>
+#include <string>
 #include <map>
 #include <queue>
 #include <set>
@@ -49,10 +50,10 @@ using namespace std;
 class DDR {
 
 public:
-list<Flit*> run(int time,bool empty);
+void run(int time,bool empty,list<Flit*>& _flits_sending);
 
 
-void _send_data();
+void _send_data(list<Flit*>& _flits_sending);
 //Flit* send_requirement();
 void receive_message(Flit*f);
 DDR(const Configuration& config, int id, const nlohmann::json& j);
@@ -67,7 +68,6 @@ private:
 	unordered_map<int, unordered_set<int>> _ifm_to_ofm;
 	unordered_map<int, pair<pair<vector<int>,string>,vector<int>>> _ofm_message;
 	//int1 is output transfer id, int 2 is input transfer number, int3 ofmap size, int4 destination number
-	list<Flit*> _flits_sending;//output for partial packets
 	int _ddr_id;
 	int _ddr_num;
 	int _core_num;

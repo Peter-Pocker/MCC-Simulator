@@ -58,37 +58,39 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	_num_flits = config.GetInt("packet_size")-1;
 	_flit_width = config.GetInt("flit_width");
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
-	assert(_ddr_id > 0 && _ddr_id <= _ddr_num);
-	for (auto& x : j[-1]["ifmap"]) {
+	assert(_ddr_id >= 0 && _ddr_id <= _ddr_num);
+	for (auto& x : j[to_string(-1)]["ifmap"]) {
 			for (auto& y : x["related_ofmap"]) {
 				_ifm_to_ofm[x].insert(y.get<int>());
 			}
 	}
-	for (auto& x : j[-1]["ofmap"]) {
-		_ofm_message[x].first.first.resize(2);
-		_ofm_message[x].first.first[0] = j[-1]["ofmap"][x.get<int>()]["related_ifmap"].size();
+	for (auto& x : j[to_string(-1)]["ofmap"]) {
+		_ofm_message[x["transfer_id"]].first.first.resize(2);
+		_ofm_message[x["transfer_id"]].first.first[0] = x["related_ifmap"].size();
 		if (_ddr_id != _ddr_num) {
-			_ofm_message[x].first.first[1] = j[-1]["ofmap"][x.get<int>()]["size"].get<int>()/_ddr_num;
+			_ofm_message[x["transfer_id"]].first.first[1] = x["size"].get<int>()/_ddr_num;
 		}
 		else {
-			_ofm_message[x].first.first[1] = j[-1]["ofmap"][x.get<int>()]["size"].get<int>() / _ddr_num + j[-1]["ofmap"][x.get<int>()]["size"].get<int>() % _ddr_num;
+			_ofm_message[x["transfer_id"]].first.first[1] = x["size"].get<int>() / _ddr_num + x["size"].get<int>() % _ddr_num;
 		}
-		_ofm_message[x].first.second = j[-1]["ofmap"][x.get<int>()]["layer_name"];
+		_ofm_message[x["transfer_id"]].first.second = x["layer_name"];
 		int i = 0;
-		for (auto& y : j[-1]["ofmap"][x.get<int>()]["destination"]) {
-			_ofm_message[x].second[i]=(y["id"].get<int>());
-			i + i + 1;
+		_ofm_message[x["transfer_id"]].second.resize(x["destination"].size());
+		for (auto& y : x["destination"]) {
+			_ofm_message[x["transfer_id"]].second[i]=(y["id"].get<int>());
+			i = i + 1;
 		}
 	}
 }  
 
 
-list<Flit*> DDR::run(int time, bool empty) {
+void DDR::run(int time, bool empty, list<Flit*>& _flits_sending) {
 //	receive_message(f);
-	_flits_sending.clear();
+	
+	//_flits_sending = nullptr;
 	if (!_packet_to_send.empty() && empty)
 	{
-		_send_data();
+		_send_data(_flits_sending);
 	}
 	else if (_packet_to_send.empty() && empty && !_data_to_send.empty()) {
 		for (int i = 0; i < _data_to_send.size(); i++) {
@@ -110,9 +112,8 @@ list<Flit*> DDR::run(int time, bool empty) {
 				_data_to_send.pop_front();
 			}
 		}
-		_send_data();
+		_send_data(_flits_sending);
 	}
-	return _flits_sending;
 }
 
 
@@ -152,7 +153,7 @@ void DDR::receive_message(Flit*f) {
 
 }
 
-void DDR::_send_data() {
+void DDR::_send_data(list<Flit*>& _flits_sending) {
 	int flits = (_packet_to_send.front().first.second.first[1] - 1) / _flit_width + 1;//data part, need to add head flit
 	for (int i = 0; i < flits + 1; i++) {
 		Flit* f = Flit::New();

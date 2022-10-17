@@ -79,6 +79,7 @@ void Flit::Reset()
   end = false;
   size = -1;
   transfer_id = -1;
+  to_ddr = false;
   nn_type = -1;
   intm = 0;
   src = -1;

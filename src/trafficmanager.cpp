@@ -72,7 +72,10 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     _nodes = _net[0]->NumNodes();
     _routers = _net[0]->NumRouters();
     _cores = config.GetIntArray("Core_routers").size();
+    _core.resize(_nodes);
+    
     _ddrs = config.GetInt("DDR_num");
+    _ddr.resize(_ddrs);
     //Bransan add _nhubs
     _nhubs = _net[0]->NumHubs();
 
@@ -384,24 +387,33 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     }
     json j;
     std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\IR_exp.json") >> j;
-    for (int i = 0; i < _nodes; i++) {
-        
-        _core[i] = new Core(config, i, j);
-    }
+    
     for (auto& p : config.GetIntArray("Core_routers")) {
         core_id.insert(p);
     }
 
-    for (int i = 0; i < _ddrs; i++) {
+    for (int i = 0; i < _nodes; i++) {
+        if (core_id.count(i) > 0) {
+            Core* temp = new Core(config, i, j);
+            _core[i] = temp;
+            
+        }
+        else {
+            _core[i] = NULL;
+        }
+    }
 
-        _ddr[i] = new DDR(config, i, j);
+    for (int i = 0; i < _ddrs; i++) {
+        DDR* temp = new DDR(config, i, j);
+        _ddr[i] = temp;
+        
     }
     
     int temp_r = ddr_routers.size() / _ddrs;
-    assert(temp_r != (ddr_routers.size() + 1) / ddr_num);
+    assert(ddr_routers.size() % _ddrs==0);
     int temp_p =0;
     for (auto& p : ddr_routers) {
-        int ddr_id_p = temp_r / temp_p;
+        int ddr_id_p = temp_p/temp_r;
         ddr_id[p]=ddr_id_p;
         temp_p = temp_p + 1;
     }
@@ -1379,12 +1391,12 @@ void TrafficManager::_Inject()
         if (core_id.count(i) > 0 || ddr_id.count(i)>0) {
             assert(!(core_id.count(i) > 0 && ddr_id.count(i) > 0));
              for (int c = 0; c < _classes; ++c){
-                 list<Flit*> flits;
+                 list<Flit*> flits{};
                  if (core_id.count(i) > 0) {
-                      flits = _core[i]->run(_time, _partial_packets[i][c].empty());
+                      _core[i]->run(_time, _partial_packets[i][c].empty(),flits);
                  }
                  else if (ddr_id.count(i) > 0) {
-                     flits = _ddr[ddr_id[i]]->run(_time, _partial_packets[i][c].empty());
+                      _ddr[ddr_id[i]]->run(_time, _partial_packets[i][c].empty(), flits);
                  }
 
                 int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;

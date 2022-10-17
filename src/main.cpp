@@ -250,16 +250,15 @@ void hubstatistacks(int nhubs)
 int main( int argc, char **argv )
 {
 
-
   
   BookSimConfig config;
 
-
+  /*
   if ( !ParseArgs( &config, argc, argv ) ) {
     cerr << "Usage: " << argv[0] << " configfile... [param=value...]" << endl;
     return 0;
  } 
-
+*/
   
   /*initialize routing, traffic, injection functions
    */
