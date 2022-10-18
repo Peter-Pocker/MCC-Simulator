@@ -220,7 +220,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 		} while (!finish);
 	}
 	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1&& _cur_wl_rq.empty()&&!_overall_end) {
-		assert(!o_buf[_cur_sd_obuf].empty());
+		assert(!o_buf[_cur_sd_obuf].empty(),"wrong empty");
 		_send_data(_flits_sending);
 		if (_wl_end) {
 			bool temp = true;
@@ -248,15 +248,30 @@ void Core::receive_message(Flit*f) {
 	}
 	if (f->nn_type == 6) {
 		_s_rq_list[f->transfer_id][1] = _s_rq_list[f->transfer_id][1] - f->size;
+		if (f->end) {
+			_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - 1;
+		}
+		if (_s_rq_list[f->transfer_id][1] == 0) {
+			assert(_s_rq_list[f->transfer_id][2] == 0);
+			_core_buffer[f->layer_name].insert(f->transfer_id);
+			_left_data.erase(f->transfer_id);
+		}
+		cout << " remaining_size = " << _s_rq_list[f->transfer_id][1] << "\n"
+			<<"flit source = "<<f->src<<"\n"
+			<<"packet_id = "<<f->pid<<endl;
+
 	}
+	/*
 	if (f->nn_type == 6 && f->end) {
 		_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - 1;
 		if (_s_rq_list[f->transfer_id][2] == 0) {
-			assert(_s_rq_list[f->transfer_id][1] == 0);
+//			cout<< " remaining_size = "<<_s_rq_list[f->transfer_id][1]<<"\n";
+//			cout << " remaining_end_to_recieve = " << _s_rq_list[f->transfer_id][2] << "\n";
+			assert(_s_rq_list[f->transfer_id][1] == 0,"received data no match");
 			_core_buffer[f->layer_name].insert(f->transfer_id);
 		}
 		_left_data.erase(f->transfer_id);
-	}
+	}*/
 	
 
 }
