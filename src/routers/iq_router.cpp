@@ -4484,6 +4484,14 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
   f_dup->oid = cf->oid;
   f_dup->record = cf->record;
   f_dup->cl     = cf->cl;
+  //DNN specific
+  f_dup->nn_type=cf->nn_type;
+  f_dup->transfer_id = cf->transfer_id;
+  f_dup->end = cf->end;
+  f_dup->from_ddr = cf->from_ddr;
+  f_dup->to_ddr = cf->to_ddr;
+  f_dup->layer_name = cf->layer_name;
+  f_dup->size = cf->size;
 
     _total_in_flight_flits[f_dup->cl].insert(make_pair(f_dup->id, f_dup));
   if(cf->record) {

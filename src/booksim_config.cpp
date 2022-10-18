@@ -144,8 +144,8 @@ BookSimConfig::BookSimConfig( )
   AddStrField("spec_sw_allocator", "prio");
   
   _int_map["received_queue_size"]  = 32; //Recieved queue size  
-  _int_map["num_vcs"]         = 32;  
-  _int_map["vc_buf_size"]     = 8;  //per vc buffer size
+  _int_map["num_vcs"]         = 8;  
+  _int_map["vc_buf_size"]     = 24;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
   AddStrField("buffer_policy", "private"); //buffer sharing policy
 
@@ -226,7 +226,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["injection_rate_uses_flits"] = 0;
 
   // number of flits per packet
-  _int_map["packet_size"] = 2;
+  _int_map["packet_size"] = 16;
   AddStrField("packet_size", ""); // workaraound to allow for vector specification
 
   // if multiple values are specified per class, set probabilities for each

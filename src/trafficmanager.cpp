@@ -1421,6 +1421,9 @@ void TrafficManager::_Inject()
                         f->watch = watch | (gWatchOut && (_flits_to_watch.count(f->id) > 0));
                         f->id = _cur_id++;
                         f->cl = c;
+                        f->src = i;
+                        f->ctime = timer;
+                        f->record = record;
                         f->subnetwork = 0;
                         _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
                         if ((_sim_state == running) ||

@@ -80,6 +80,9 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 			_ofm_message[x["transfer_id"]].second[i]=(y["id"].get<int>());
 			i = i + 1;
 		}
+		if (_ofm_message[x["transfer_id"]].first.first[0] == 0) {
+			_ready_list.insert(x["transfer_id"].get<int>());
+		}
 	}
 }  
 
@@ -124,7 +127,7 @@ void DDR::receive_message(Flit*f) {
 		if (!_ready_list.count(f->transfer_id) > 0) {
 			_r_rq_list.insert(f->transfer_id);
 		}
-		else if(_ready_list.count(f->transfer_id) > 0 || _ofm_message[f->transfer_id].first.first[0]==0){
+		else if(_ready_list.count(f->transfer_id) > 0 ){
 			vector<int> temp(2);
 			temp[0] = f->transfer_id;
 			temp[1] = _ofm_message[f->transfer_id].first.first[1];
@@ -149,7 +152,6 @@ void DDR::receive_message(Flit*f) {
 			}
 		}
 	}
-
 
 }
 

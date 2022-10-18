@@ -194,7 +194,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 				if (_s_rq_list[p][0] < 0 && _interleave) {
 					f->mflag = true;
 					f->to_ddr = true;
-					f->mdest.first.resize(_ddr_num);
+					f->mdest.first.reserve(_ddr_num);
 				}
 				f->size = _s_rq_list[p][1];
 				f->tail = true;
@@ -406,6 +406,7 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 				if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].second.size() > 1) {
 					f->mflag = true;
 					for (auto& x : o_buf[_cur_sd_obuf][_sd_mini_tile_id].second) {
+						f->mdest.first.reserve(o_buf[_cur_sd_obuf][_sd_mini_tile_id].second.size()*_ddr_num);
 						if (x != -1)
 							f->mdest.first.push_back(x);
 						else {
@@ -434,6 +435,7 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 					}
 				}
 				else if (o_buf[_cur_sd_obuf][_sd_mini_tile_id].second.size() == 1) {
+					f->mdest.first.reserve(o_buf[_cur_sd_obuf][_sd_mini_tile_id].second.size() * _ddr_num);
 					for (auto& x : o_buf[_cur_sd_obuf][_sd_mini_tile_id].second) {
 						if (x != -1) {
 							f->dest = x;
