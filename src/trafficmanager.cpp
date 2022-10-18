@@ -1898,7 +1898,7 @@ void TrafficManager::_Step()
                 if ((core_id.count(n) && f->tail)) {
                     _core[n]->receive_message(f);
                 }
-                else if (ddr_id.count(n) > 0) {
+                else if (ddr_id.count(n) > 0 && f->tail) {
                     _ddr[ddr_id[n]]->receive_message(f);
                 }
                 _RetireFlit(f, n);
@@ -2372,7 +2372,7 @@ bool TrafficManager::Run()
         while (!stop)
         {
             _Step();
-            
+//            cout << _time << "\n";
             if (_time % 300 == 0) {
                 stop = true;
                 for (auto& p : core_id) {

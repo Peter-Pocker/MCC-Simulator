@@ -70,6 +70,7 @@ private:
   int _wl_num;//total workloads
   int _cur_id; //order of current wl
   bool _dataready;  //whether all data of this workload is ready
+  bool pending_data;
   int _cp_time;//compute time of current workload
   bool _running;//the state of the core, true is on compute, false is stalling (1. data is not in place 2. no output buffer)
   int _num_obuf;//number of output buffer, get from config
@@ -84,6 +85,7 @@ private:
   bool _wl_end;//all workloads are end
   bool _overall_end;//all data sending end
   int _end_time;
+  int cnt1;//record update times
 
   int _sd_gran;//sending granularity of obuf
   int _sd_gran_lb;//sending granularity lower bound
@@ -119,8 +121,8 @@ private:
  // unordered_map<int, int>_r_data_list;//receive_data_size;Each entry is decremented and should end up at 0
   //for sending data
   //unordered_map<int, unordered_set<int>> _r_rq_list;//received_request,first int is transfer_id£¬set is core list.(unicast has 1 entry, multicast has multiple entry)
-  unordered_set<int> _r_rq_list;
-  unordered_set<int> _cur_wl_rq;//the request id of current workload;
+  unordered_map<int,unordered_set<int>> _r_rq_list;//transfer_id + number
+  unordered_map<int, unordered_set<int>> _cur_wl_rq;//the request id of current workload;
   unordered_map<int, int>_send_data_list;//transfer id, data to sent;
   //unordered_map<int, int> _s_data_list;//sending_data; no need to distinguish unicast and multicast
   //for buffer record

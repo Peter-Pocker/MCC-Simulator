@@ -336,7 +336,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_file", "test");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "246813,246812");
+  AddStrField("watch_flits", "");
   AddStrField("watch_routers", "");
   AddStrField("watch_transactions", "");
 
