@@ -73,6 +73,7 @@ void Flit::Reset()
   pid       = -1 ;
   oid       = -1 ; // old fid
   hops      = 0 ;
+  flits_num = 0;
   watch     = false ;
   record    = false ;
   // for DNN

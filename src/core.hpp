@@ -50,7 +50,7 @@ class Core {
 public:
 void run(int time,bool empty,list<Flit*>&_flits_sending);
 void _send_data(list<Flit*>& _flits_sending);
-vector<int> _check_end();
+vector<int> &_check_end();
 //Flit* send_requirement();
 void receive_message(Flit*f);
 Core(const Configuration& config, int id, const nlohmann::json& j);

@@ -4511,7 +4511,7 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
   f_dup->tail = cf->tail;
 
   f_dup->vc  = cf->vc;
-  
+  f_dup->flits_num = cf->flits_num;
   f_dup->inter_dest = cf->inter_dest;
 
   f_dup->mflag = cf->mflag;

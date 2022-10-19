@@ -227,6 +227,7 @@ protected:
   eSimState _sim_state;
 
   bool _measure_latency;
+  int _wl_end_time;
 
   int   _reset_time;
   int   _drain_time;

@@ -68,7 +68,9 @@ TrafficManager *TrafficManager::New(Configuration const &config,
 TrafficManager::TrafficManager(const Configuration &config, const vector<Network *> &net)
     : Module(0, "traffic_manager"), _net(net), _empty_network(false), _deadlock_timer(0), _reset_time(0), _drain_time(-1) /*, _cur_id(0), _cur_pid(0)*/, _time(0)
 {
-
+    _cur_id = 0;
+    _cur_pid = 0;
+    _wl_end_time = 0;
     _nodes = _net[0]->NumNodes();
     _routers = _net[0]->NumRouters();
     _cores = config.GetIntArray("Core_routers").size();
@@ -386,7 +388,7 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _hub[i] = _net[i]->GetHubs();
     }
     json j;
-    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\IR_exp.json") >> j;
+    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_1c2w2d.json") >> j;
     
     for (auto& p : config.GetIntArray("Core_routers")) {
         core_id.insert(p);
@@ -920,7 +922,7 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
             int diff2 = f->atime - f->ctime;
             total_mcast_sum += diff2;
             total_mcast_dests ++;
-            total_mcast_hops += f->hops;
+            total_mcast_hops += (f->hops * f->flits_num);
         }
         if (!f->mflag && f->tail)
         {
@@ -938,7 +940,7 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
             int udiff2 = f->atime - f->ctime;
             total_ucast_sum += udiff2;
             total_ucast_dests++;
-            total_ucast_hops += f->hops;
+            total_ucast_hops += (f->hops * f->flits_num);
         }
         if (f->tail)
         {
@@ -1365,7 +1367,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
                        << "node" << source << " | "
                        << "Enqueuing flit " << f->id
                        << " (packet " << f->pid
-                       << ") at time " << timer
+                       << ") at time " << _time
                        << " transfer_id = "<<f->transfer_id
                        << " layer_name =" <<f->layer_name
                        << " to node " << f->dest
@@ -1399,14 +1401,18 @@ void TrafficManager::_Inject()
                       _ddr[ddr_id[i]]->run(_time, _partial_packets[i][c].empty(), flits);
                  }
 
-                int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;
+ //               int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;
                 if (!flits.empty()) {
                     int pid = 0;
                     bool record = false;
                     bool watch = false;
+                    int mflag_temp=false;
                     for (auto& f : flits) {
+                        f->id = _cur_id++;
                         if (f->head) {
+                            total_count++;
                             pid = _cur_pid++;
+                            f->pid = pid;
                             watch = gWatchOut && (_packets_to_watch.count(f->pid) > 0);
                             if (watch || (_routers_to_watch.count(i) > 0))
                             {
@@ -1416,13 +1422,28 @@ void TrafficManager::_Inject()
                                     << " at time " << _time
                                     << "." << endl;
                             }
+                            if(f->mflag){
+                            mcastcount++;
+                            f->oid = f->id;
+                            latest_mdnd_hop = hop_calculator(i, f->mdest.first);
+                            non_mdnd_hops += latest_mdnd_hop;
+                            mflag_temp = f->mflag;
+                            }
+                            if ( f->watch || (_routers_to_watch.count(i) > 0))
+                            {
+                                *gWatchOut << "Pid " << f->pid << " Destinations are: " << endl;
+                                for (int i = 0; i < f->mdest.first.size(); i++) {
+                                    *gWatchOut << f->mdest.first[i] << " ";
+                                }
+                                *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << i << endl;
+                            }
                         }
                         f->pid = pid;
                         f->watch = watch | (gWatchOut && (_flits_to_watch.count(f->id) > 0));
-                        f->id = _cur_id++;
+                        
                         f->cl = c;
                         f->src = i;
-                        f->ctime = timer;
+                        f->ctime = _time;
                         f->record = record;
                         f->subnetwork = 0;
                         _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
@@ -1447,7 +1468,7 @@ void TrafficManager::_Inject()
                             assert(f->pri >= 0);
                             break;
                         case age_based:
-                            f->pri = numeric_limits<int>::max() - timer;
+                            f->pri = numeric_limits<int>::max() - _time;
                             assert(f->pri >= 0);
                             break;
                         case sequence_based:
@@ -1458,31 +1479,15 @@ void TrafficManager::_Inject()
                             f->pri = 0;
                         }
                         f->vc = -1;
-                        if (f->tail && !f->mflag) {
-                            uf_diff[f->id] = 0;
-                            uf_diff1[f->id] = 0;
-                        }
-                        if (f->mflag) {
-                            mcastcount++;
-                            f->oid = f->id;
-                            if (f->head)
-                            {
-                                latest_mdnd_hop = hop_calculator(i, f->mdest.first);
-                                non_mdnd_hops += latest_mdnd_hop;
+                        if (f->tail) {
+                            if (!mflag_temp) {
+                                uf_diff[f->id] = 0;
+                                uf_diff1[f->id] = 0;
                             }
-                            if (f->tail)
-                            {
+                            else {
                                 f_orig_ctime[f->id] = f->ctime;
                                 f_diff[f->id] = 0;
                                 f_diff1[f->id] = 0;
-                            }
-                            if (f->head && f->watch || (_routers_to_watch.count(i) > 0))
-                            {
-                                *gWatchOut << "Pid " << f->pid << " Destinations are: " << endl;
-                                for (int i = 0; i < f->mdest.first.size(); i++) {
-                                    *gWatchOut << f->mdest.first[i] << " ";
-                                }
-                                *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << i << endl;
                             }
                         }
                         // Potentially generate packets for any (input,class)
@@ -1493,13 +1498,13 @@ void TrafficManager::_Inject()
                                 << "node" << i << " | "
                                 << "Enqueuing flit " << f->id
                                 << " (packet " << f->pid
-                                << ") at time " << timer
+                                << ") at time " << _time
                                 << " to node " << f->dest
                                 << " | mcast " << f->mflag
                                 << "." << endl;
                         }
 
-                        total_count++;
+                        
 
                         _partial_packets[i][c].push_back(f);
 
@@ -2376,7 +2381,11 @@ bool TrafficManager::Run()
             if (_time % 300 == 0) {
                 stop = true;
                 for (auto& p : core_id) {
-                    stop = stop && _core[p]->_check_end()[0];
+                    vector<int> temp = _core[p]->_check_end();
+                    stop = stop && temp[0];
+                    if (temp[1] > _wl_end_time) {
+                        _wl_end_time = temp[1];
+                    }
                 }
             }
         }
@@ -2423,8 +2432,9 @@ bool TrafficManager::Run()
 
         //for the love of god don't ever say "Time taken" anywhere else
         //the power script depend on it
+        cout << "Workload taken " << _wl_end_time << " cycles" << endl;
         cout << "Time taken is " << _time << " cycles" << endl;
-
+        
         if (_stats_out)
         {
             WriteStats(*_stats_out);

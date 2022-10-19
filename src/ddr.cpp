@@ -61,7 +61,7 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	assert(_ddr_id >= 0 && _ddr_id <= _ddr_num);
 	for (auto& x : j[to_string(-1)]["ifmap"]) {
 			for (auto& y : x["related_ofmap"]) {
-				_ifm_to_ofm[x].insert(y.get<int>());
+				_ifm_to_ofm[x["transfer_id"]].insert(y.get<int>());
 			}
 	}
 	for (auto& x : j[to_string(-1)]["ofmap"]) {
@@ -134,9 +134,9 @@ void DDR::receive_message(Flit*f) {
 			_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[f->transfer_id].first.second), _ofm_message[f->transfer_id].second));//to do when an entry is empty, drain pending_data firstly
 		}
 	}
-	if (f->nn_type == 6 ) {
-		cout <<" this DDR is = "<<_ddr_id << " receive flit " << f->id << " size is = " << f->size << "\n";
-	}
+//	if (f->nn_type == 6 ) {
+//		cout <<" this DDR is = "<<_ddr_id << " receive flit " << f->id << " size is = " << f->size << "\n";
+//	}
 	if (f->nn_type == 6 && f->end) {
 		unordered_set<int> temp=_ifm_to_ofm[f->transfer_id];
 		if (!_ifm_to_ofm[f->transfer_id].empty()) {

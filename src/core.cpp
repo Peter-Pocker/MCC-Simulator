@@ -175,8 +175,8 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 		if (time == _end_tile_time) {
 			_write_obuf();
 			_tile_time.pop_front();
-			cout << "_tile_time = " << _tile_time.size() << "\n";
-			cout << "_tile_size = " << _tile_size.size() << "\n";
+//			cout << "_tile_time = " << _tile_time.size() << "\n";
+//			cout << "_tile_size = " << _tile_size.size() << "\n";
 			_generate_next_rc_obuf_id();
 			_generate_next_sd_obuf_id();
 			if (_tile_size.empty()) {
@@ -209,6 +209,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 				f->nn_type = 5;
 				if (_s_rq_list[p][0] < 0 && _interleave) {
 					f->mflag = true;
+					f->flits_num = 1;
 					f->to_ddr = true;
 					f->mdest.first.reserve(_ddr_num);
 				}
@@ -222,7 +223,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 	}
 	//data sending part (connect router)
 	bool finish = false;
-	cout << empty << "\n";
+	//cout << empty << "\n";
 	if (!_requirements_to_send.empty() && empty &&!_wl_end) {
 		do {
 			if (_requirements_to_send.front()->head && _requirements_to_send.front()->to_ddr) {
@@ -395,7 +396,7 @@ bool Core::_generate_next_sd_obuf_id() {
 	return false;
 }
 
-vector<int> Core::_check_end() {
+vector<int>& Core::_check_end() {
 	if (_overall_end) {
 		_end_message[0] = _overall_end ? 1 : 0;
 		_end_message[1] = _end_time;
@@ -436,9 +437,10 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 		int transfer_id = o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0];
 		int ddr_initial = o_buf[_cur_sd_obuf][_sd_mini_tile_id].second.size() * _ddr_num;
 		bool end = false;
+		bool mflas_temp = false;
 		o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] = o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] - size;
 		_send_data_list[transfer_id] = _send_data_list[transfer_id] - size;
-						cout << "_send_data"<<_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] << "\n";
+		//				cout << "_send_data"<<_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] << "\n";
 		//				cout << "obuf" << o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] <<"\n";
 		unordered_set<int> destinations = o_buf[_cur_sd_obuf][_sd_mini_tile_id].second;
 		if (_send_data_list[transfer_id] == 0) {
@@ -471,14 +473,17 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 		for (int i = 0; i < flits+1; i++) {//+1 because there is a head
 			Flit* f = Flit::New();
 			f->nn_type = 6;
+			f->flits_num = flits + 1;
 			f->head = i == 0 ? true : false;
 			f->tail = i == (flits) ? true : false;
 			f->size = size;
+			f->mflag = mflas_temp;
 			f->transfer_id = transfer_id;
 			f->layer_name = _layer_name;
 			if (f->head) {				
 				if (destinations.size() > 1) {
 					f->mflag = true;
+					mflas_temp = true;
 					for (auto& x : destinations) {
 						f->mdest.first.reserve(ddr_initial);
 						if (x != -1)
@@ -533,6 +538,7 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 							}
 							else {
 								f->mflag = true;
+								mflas_temp = true;
 								for (i = 0; i < _ddr_num; i++) {
 									f->mdest.first.push_back(_ddr_id[i * _ddr_num + rand() % _ddr_rnum]);
 								}

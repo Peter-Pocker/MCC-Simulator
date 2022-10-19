@@ -56,7 +56,7 @@ public:
   FlitType type;
 
   int vc;
-
+  int flits_num;
   int nn_type;//5 is request, 6 is data
 
   int cl;
