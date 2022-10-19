@@ -1162,7 +1162,7 @@ int hop_calculator(int source, vector<int> dests)
     // }
     return total;
 }
-
+/*
 void TrafficManager::_GeneratePacket(int source, int stype,
                                      int cl, int timer)
 {
@@ -1379,7 +1379,7 @@ void TrafficManager::_GeneratePacket(int source, int stype,
 
         _partial_packets[source][cl].push_back(f);
     }
-}
+}*/
 
 
 
@@ -1391,6 +1391,7 @@ void TrafficManager::_Inject()
     {
         //int input = rand_inputs[i];
         if (core_id.count(i) > 0 || ddr_id.count(i)>0) {
+ //           cout << _cur_id<<"\n";
             assert(!(core_id.count(i) > 0 && ddr_id.count(i) > 0));
              for (int c = 0; c < _classes; ++c){
                  list<Flit*> flits{};
@@ -1409,6 +1410,7 @@ void TrafficManager::_Inject()
                     int mflag_temp=false;
                     for (auto& f : flits) {
                         f->id = _cur_id++;
+//                        cout << f->id << "\n";
                         if (f->head) {
                             total_count++;
                             pid = _cur_pid++;
@@ -1490,6 +1492,7 @@ void TrafficManager::_Inject()
                                 f_diff1[f->id] = 0;
                             }
                         }
+                       
                         // Potentially generate packets for any (input,class)
                         // that is currently empty
                         if (f->watch || (_routers_to_watch.count(i) > 0))

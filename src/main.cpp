@@ -315,16 +315,18 @@ int main(int argc, char** argv)
     int minid = 0;
     for (map<int, int>::iterator i = f_diff.begin(); i != f_diff.end(); i++)
     {
-        sum += i->second;
-        if (i->second > max) {
-            max = i->second;
-            maxid = i->first;
+        if (i->first > -1) {
+            sum += i->second;
+            if (i->second > max) {
+                max = i->second;
+                maxid = i->first;
+            }
+            if (i->second < min) {
+                min = i->second;
+                minid = i->first;
+            }
+            count++;
         }
-        if (i->second < min) {
-            min = i->second;
-            minid = i->first;
-        }
-        count++;
     }
     int count1 = 0;
     int sum1 = 0;
@@ -335,17 +337,21 @@ int main(int argc, char** argv)
     int minid1 = 0;
     for (map<int, int>::iterator i1 = f_diff1.begin(); i1 != f_diff1.end(); i1++)
     {
+//        f_diff1;
 //        cout << "m fid = " << i1->first << " time cost = " << i1->second << "\n";
-        sum1 += i1->second;
-        if (i1->second > max1) {
-            max1 = i1->second;
-            maxid1 = i1->first;
+        if (i1->first > -1) {
+            sum1 += i1->second;
+
+            if (i1->second > max1) {
+                max1 = i1->second;
+                maxid1 = i1->first;
+            }
+            if (i1->second < min1) {
+                min1 = i1->second;
+                minid1 = i1->first;
+            }
+            count1++;
         }
-        if (i1->second < min1) {
-            min1 = i1->second;
-            minid1 = i1->first;
-        }
-        count1++;
     }
 
     int ucount = 0;

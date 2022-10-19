@@ -440,8 +440,8 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 		bool mflas_temp = false;
 		o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] = o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] - size;
 		_send_data_list[transfer_id] = _send_data_list[transfer_id] - size;
-						cout << "_send_data"<<_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] << "\n";
-						cout << "obuf" << o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] <<"\n";
+		//				cout << "_send_data"<<_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] << "\n";
+		//				cout << "obuf" << o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] <<"\n";
 		unordered_set<int> destinations = o_buf[_cur_sd_obuf][_sd_mini_tile_id].second;
 		assert(_send_data_list[transfer_id] >= 0);
 		assert(o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] >= 0);
@@ -497,11 +497,11 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 									f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum]);
 								}
 								else {
-									if (id_ddr_rel.count(transfer_id) < _ddr_num - 1) {
+									if (id_ddr_rel[transfer_id] < _ddr_num - 1) {
 										id_ddr_rel[transfer_id] = id_ddr_rel[transfer_id] + 1;
 										f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum]);
 									}
-									else if (id_ddr_rel.count(transfer_id) == _ddr_num - 1) {
+									else if (id_ddr_rel[transfer_id] == _ddr_num - 1) {
 										id_ddr_rel[transfer_id] = 0;
 										f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum]);
 									}
@@ -525,14 +525,16 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 							if (!end) {
 								if (id_ddr_rel.count(transfer_id) == 0) {
 									id_ddr_rel[transfer_id] = rand() % _ddr_num;
-									f->dest = _ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum];
+									int temp = _ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum];
+									f->dest =temp ;
+//									cout << "destination ddr router is = " << temp << "\n";
 								}
 								else {
-									if (id_ddr_rel.count(transfer_id) < _ddr_num - 1) {
-										id_ddr_rel[transfer_id] = id_ddr_rel.count(transfer_id) + 1;
+									if (id_ddr_rel[transfer_id] < _ddr_num - 1) {
+										id_ddr_rel[transfer_id] = id_ddr_rel[transfer_id] + 1;
 										f->dest = _ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum];
 									}
-									else if (id_ddr_rel.count(transfer_id) == _ddr_num - 1) {
+									else if (id_ddr_rel[transfer_id] == _ddr_num - 1) {
 										id_ddr_rel[transfer_id] = 0;
 										f->dest = _ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum];
 									}
@@ -552,13 +554,14 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 			
 			if (f->tail) {
 				f->end = end;
-				if (end) {
-					int i = 1;
-				}
 			}
+			
 			
 				_flits_sending.push_back(f);
 			}
+		if (end) {
+			id_ddr_rel.erase(transfer_id);
+		}
 		}
 
 
