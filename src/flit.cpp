@@ -93,6 +93,8 @@ void Flit::Reset()
   mflag = false;
   from_ddr = false;
   layer_name = "";
+  mdest.first={};
+  mdest.second = {};
 }  
 
 Flit * Flit::New() {

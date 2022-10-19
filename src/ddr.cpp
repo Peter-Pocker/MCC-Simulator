@@ -134,15 +134,15 @@ void DDR::receive_message(Flit*f) {
 			_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[f->transfer_id].first.second), _ofm_message[f->transfer_id].second));//to do when an entry is empty, drain pending_data firstly
 		}
 	}
-//	if (f->nn_type == 6 ) {
-//		cout <<" this DDR is = "<<_ddr_id << " receive flit " << f->id << " size is = " << f->size << "\n";
-//	}
+	if (f->nn_type == 6 ) {
+		cout <<" this DDR is = "<<_ddr_id << " receive flit " << f->id << " size is = " << f->size << "\n";
+	}
 	if (f->nn_type == 6 && f->end) {
 		unordered_set<int> temp=_ifm_to_ofm[f->transfer_id];
 		if (!_ifm_to_ofm[f->transfer_id].empty()) {
 			for (auto& x : _ifm_to_ofm[f->transfer_id]) {
 				_ofm_message[x].first.first[0] = _ofm_message[x].first.first[0] - 1;
-				assert(_ofm_message[x].first.first[0]);
+//				assert(_ofm_message[x].first.first[0]);
 				if (_ofm_message[x].first.first[0] == 0) {
 					_ready_list.insert(x);
 					if (_r_rq_list.count(x) > 0) {
