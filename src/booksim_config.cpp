@@ -32,7 +32,7 @@
  */
  /*
  * placement:1-5, 0_1 -> 0_2 -> 1_2 xy
- *  7,8,9
+ *  6,7,8
  *  3,4,5
  *  0,1,2
  */
@@ -71,7 +71,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
 
   //after the DDR receives its requirement, it can send data. 
-  AddStrField("DDR_routers", "{0,3,2,5}");//grouped by ddr numbers. 
+  AddStrField("DDR_routers", "{0,3,6,2,5,8}");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
 
@@ -80,8 +80,8 @@ BookSimConfig::BookSimConfig( )
   //Core configuration
   _int_map["num_obuf"] = 4;
   _int_map["flit_width"] = 512;
-  _int_map["sending_granularity"] = 10;//output sending granularity
-  _int_map["sending_granularity_lowerbound"] = 2;
+  _int_map["sending_granularity"] = 1;//output sending granularity
+  _int_map["sending_granularity_lowerbound"] = 1;
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );

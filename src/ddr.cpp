@@ -89,14 +89,16 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 
 void DDR::run(int time, bool empty, list<Flit*>& _flits_sending) {
 //	receive_message(f);
-	
+	_time = time;
+
 	//_flits_sending = nullptr;
 	if (!_packet_to_send.empty() && empty)
 	{
 		_send_data(_flits_sending);
 	}
 	else if (_packet_to_send.empty() && empty && !_data_to_send.empty()) {
-		for (int i = 0; i < _data_to_send.size(); i++) {
+		int times = _data_to_send.size();
+		for (int i = 0; i < times; i++) {
 
 			bool temp = ceil(double(_data_to_send.front().first.first[1]) / _flit_width) > _num_flits;
 			int temp1 = temp ? _num_flits * _flit_width : _data_to_send.front().first.first[1];
@@ -160,11 +162,12 @@ void DDR::receive_message(Flit*f) {
 }
 
 void DDR::_send_data(list<Flit*>& _flits_sending) {
-	int flits = (_packet_to_send.front().first.second.first[1] - 1) / _flit_width + 1;//data part, need to add head flit
+	int flits = (_packet_to_send.front().first.second.first[1] - 1) / _flit_width + 1;//data part, need to add head fli
 	for (int i = 0; i < flits + 1; i++) {
 		Flit* f = Flit::New();
 		f->nn_type = 6;
 		f->head = i == 0 ? true : false;
+		f->ctime = _time;
 		f->tail = i == (flits) ? true : false;
 		f->size = _packet_to_send.front().first.second.first[1];
 		f->layer_name = _packet_to_send.front().first.second.second;

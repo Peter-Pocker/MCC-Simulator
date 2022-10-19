@@ -71,6 +71,7 @@ private:
 	int _ddr_id;
 	int _ddr_num;
 	int _core_num;
+	int _time;
 
 	int _num_flits;//number of flits per packet at most;
 	int _flit_width;//line width, default 1g hz frequency.

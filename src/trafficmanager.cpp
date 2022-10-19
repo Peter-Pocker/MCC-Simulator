@@ -1445,7 +1445,7 @@ void TrafficManager::_Inject()
                         
                         f->cl = c;
                         f->src = i;
-                        f->ctime = _time;
+ //                       f->ctime = _time;
                         f->record = record;
                         f->subnetwork = 0;
                         _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));

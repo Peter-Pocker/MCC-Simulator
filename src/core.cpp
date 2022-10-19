@@ -163,16 +163,17 @@ void Core::_update()
 
 void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 //	receive_message(f);
+	_time = time;
 	if (_wl_fn &( _dataready && (_cur_rc_obuf!=-1)&&!_wl_end)) {
 		_running = true;
 		_wl_fn = false;
 		_dataready = false;
-		_start_wl_time = time;
-		_start_tile_time = time;
+		_start_wl_time = _time;
+		_start_tile_time = _time;
 		_end_tile_time = _start_tile_time + _tile_time.front(); //neglect non-integer part
 	}
 	if (_running && !_wl_end) {
-		if (time == _end_tile_time) {
+		if (_time == _end_tile_time) {
 			_write_obuf();
 			_tile_time.pop_front();
 //			cout << "_tile_time = " << _tile_time.size() << "\n";
@@ -188,14 +189,14 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 			}
 			else {
 				_cur_tile_id = _cur_tile_id + 1;
-				_start_tile_time = time + 1;
-				_end_tile_time = time + _tile_time.front();
+				_start_tile_time = _time + 1;
+				_end_tile_time = _time + _tile_time.front();
 			}
 		} else if (pending && _cur_rc_obuf != -1) {
 			pending = false;
 				_cur_tile_id = _cur_tile_id + 1;
-				_start_tile_time = time + 1;
-				_end_tile_time = time + _tile_time.front();
+				_start_tile_time = _time + 1;
+				_end_tile_time = _time + _tile_time.front();
 		}
 	}
 
@@ -216,9 +217,12 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 				f->size = _s_rq_list[p][1];
 				f->tail = true;
 				f->head = true;
+				f->ctime = _time;
 				f->transfer_id = p;
 				_requirements_to_send.push_back(f);
 			}
+			_rq_to_sent.clear();
+
 		}
 	}
 	//data sending part (connect router)
@@ -228,7 +232,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 		do {
 			if (_requirements_to_send.front()->head && _requirements_to_send.front()->to_ddr) {
 				for (int i = 0; i < _ddr_num; i++) {
-					_requirements_to_send.front()->mdest.first.push_back(_ddr_id[i * _ddr_num + rand() % _ddr_rnum]);
+					_requirements_to_send.front()->mdest.first.push_back(_ddr_id[i * _ddr_rnum + rand() % _ddr_rnum]);
 				}
 			}
 			_flits_sending.push_back(_requirements_to_send.front());
@@ -248,7 +252,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 			}
 			if (temp) {
 				_overall_end = true;
-				_end_time = time;
+				_end_time = _time;
 			}
 		}
 	}
@@ -271,7 +275,9 @@ void Core::receive_message(Flit*f) {
 	if (f->nn_type == 6) {
 		_s_rq_list[f->transfer_id][1] = _s_rq_list[f->transfer_id][1] - f->size;
 		if (f->end) {
+			cout << "receive end transfer_id " << f->transfer_id << " src= "<<f->src<< " inject time = "<<f->ctime<< "\n";
 			_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - 1;
+			assert(_s_rq_list[f->transfer_id][2] >= 0);
 		}
 		if (_s_rq_list[f->transfer_id][1] == 0) {
 			assert(_s_rq_list[f->transfer_id][2] == 0);
@@ -479,6 +485,7 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 			f->head = i == 0 ? true : false;
 			f->tail = i == (flits) ? true : false;
 			f->size = size;
+			f->ctime = _time;
 			f->mflag = mflas_temp;
 			f->transfer_id = transfer_id;
 			f->layer_name = _layer_name;
@@ -494,22 +501,22 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 							if (!end) {
 								if (id_ddr_rel.count(transfer_id) == 0) {
 									id_ddr_rel[transfer_id] = rand() % _ddr_num;
-									f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum]);
+									f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_rnum + rand() % _ddr_rnum]);
 								}
 								else {
 									if (id_ddr_rel[transfer_id] < _ddr_num - 1) {
 										id_ddr_rel[transfer_id] = id_ddr_rel[transfer_id] + 1;
-										f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum]);
+										f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_rnum + rand() % _ddr_rnum]);
 									}
 									else if (id_ddr_rel[transfer_id] == _ddr_num - 1) {
 										id_ddr_rel[transfer_id] = 0;
-										f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum]);
+										f->mdest.first.push_back(_ddr_id[id_ddr_rel[transfer_id] * _ddr_rnum + rand() % _ddr_rnum]);
 									}
 								}
 							}
 							else {
 								for (int p = 0; p <= _ddr_num; p++) {
-									f->mdest.first.push_back(_ddr_id[p * _ddr_num + rand() % _ddr_rnum]);
+									f->mdest.first.push_back(_ddr_id[p * _ddr_rnum + rand() % _ddr_rnum]);
 								}
 							}
 						}
@@ -524,19 +531,19 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 						else {
 							if (!end) {
 								if (id_ddr_rel.count(transfer_id) == 0) {
-									id_ddr_rel[transfer_id] = rand() % _ddr_num;
-									int temp = _ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum];
+									id_ddr_rel[transfer_id] = rand() % _ddr_rnum;
+									int temp = _ddr_id[id_ddr_rel[transfer_id] * _ddr_rnum + rand() % _ddr_rnum];
 									f->dest =temp ;
 //									cout << "destination ddr router is = " << temp << "\n";
 								}
 								else {
 									if (id_ddr_rel[transfer_id] < _ddr_num - 1) {
 										id_ddr_rel[transfer_id] = id_ddr_rel[transfer_id] + 1;
-										f->dest = _ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum];
+										f->dest = _ddr_id[id_ddr_rel[transfer_id] * _ddr_rnum + rand() % _ddr_rnum];
 									}
 									else if (id_ddr_rel[transfer_id] == _ddr_num - 1) {
 										id_ddr_rel[transfer_id] = 0;
-										f->dest = _ddr_id[id_ddr_rel[transfer_id] * _ddr_num + rand() % _ddr_rnum];
+										f->dest = _ddr_id[id_ddr_rel[transfer_id] * _ddr_rnum + rand() % _ddr_rnum];
 									}
 								}
 							}
@@ -544,7 +551,7 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 								f->mflag = true;
 								mflas_temp = true;
 								for (int p = 0; p < _ddr_num; p++) {
-									f->mdest.first.push_back(_ddr_id[p * _ddr_num + rand() % _ddr_rnum]);
+									f->mdest.first.push_back(_ddr_id[p * _ddr_rnum + rand() % _ddr_rnum]);
 								}
 							}
 						}
