@@ -130,7 +130,7 @@ void Core::_update()
 					temp.second.insert(-1);
 					temp1.second.insert(-1);
 				}
-				else {
+				else if (y["id"] != _core_id) {
 					temp.second.insert(y["id"].get<int>());
 					temp1.second.insert(y["id"].get<int>());//
 					_cur_wl_rq[x["transfer_id"].get<int>()].insert(y["id"].get<int>());
@@ -319,13 +319,14 @@ void Core::_buffer_update()
 					_s_rq_list[y["transfer_id"]][1]=y["size"].get<int>();
 					_s_rq_list[y["transfer_id"]][2] = 1;
 				}
-				else{
+				else if (y["id"] == _core_id) {
+					_core_buffer[_layer_name].insert(y["transfer_id"].get<int>());
+				}else{
 					_s_rq_list[y["transfer_id"]][0]=-1;
 					_s_rq_list[y["transfer_id"]][1] = y["size"].get<int>();
 					_s_rq_list[y["transfer_id"]][2] = _interleave?_ddr_num:1;//to revise it into ddr group number
 				}
-				_rq_to_sent.insert(y["transfer_id"].get<int>());
-				
+				_rq_to_sent.insert(y["transfer_id"].get<int>());	
 			}
 		}
 	}

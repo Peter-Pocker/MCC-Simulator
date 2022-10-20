@@ -38,6 +38,13 @@
  */
 /*
 * placement:1 - 5, 0_1 -> 0_2 -> 1_2 xy
+* 12 13 14 15
+* 8, 9, 10,11
+* 4, 5, 6,7
+* 0, 1, 2,3
+* /
+/*
+* placement:1 - 5, 0_1 -> 0_2 -> 1_2 xy
 * 20 21 22 23 24
 * 15 16 17 18 19
 * 10,11,12,13,14
@@ -66,12 +73,12 @@ BookSimConfig::BookSimConfig( )
   _int_map["DDR_fq"] = 16; //frequency / gbps
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 2;
-  _int_map["Core_num"] = 1;
+  _int_map["Core_num"] = 2;
   AddStrField("Core_routers", "{4}");//these location has cores, some routers can be idle
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
 
   //after the DDR receives its requirement, it can send data. 
-  AddStrField("DDR_routers", "{0,3,6,2,5,8}");//grouped by ddr numbers. 
+  AddStrField("DDR_routers", "{0,3,2,5}");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
 
