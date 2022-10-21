@@ -126,7 +126,7 @@ void DDR::run(int time, bool empty, list<Flit*>& _flits_sending) {
 void DDR::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
 	if (f->nn_type == 5) {
-		
+		cout << "this DDR is = " << _ddr_id << " receive requirement transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
 		if (!_ready_list.count(f->transfer_id) > 0) {
 			_r_rq_list.insert(f->transfer_id);
 		}
@@ -137,10 +137,11 @@ void DDR::receive_message(Flit*f) {
 			_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[f->transfer_id].first.second), _ofm_message[f->transfer_id].second));//to do when an entry is empty, drain pending_data firstly
 		}
 	}
-//	if (f->nn_type == 6 ) {
-//		cout << " this DDR is = " << _ddr_id << " receive flit " << f->id << " size is = " << f->size << "\n";
-//	}
+	if (f->nn_type == 6 ) {
+		cout << " this DDR is = " << _ddr_id << " receive transfer_id " << f->transfer_id<< " receive flit " << f->id << " size is = " << f->size << "\n";
+	}
 	if (f->nn_type == 6 && f->end) {
+		cout << "this DDR is = " << _ddr_id << " receive end transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
 		unordered_set<int> temp=_ifm_to_ofm[f->transfer_id];
 		if (!_ifm_to_ofm[f->transfer_id].empty()) {
 			for (auto& x : _ifm_to_ofm[f->transfer_id]) {

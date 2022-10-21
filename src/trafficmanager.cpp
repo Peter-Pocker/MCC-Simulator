@@ -388,7 +388,7 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _hub[i] = _net[i]->GetHubs();
     }
     json j;
-    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_1c2w2d_2.json") >> j;
+    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_2c2w2d_1.json") >> j;
     
     for (auto& p : config.GetIntArray("Core_routers")) {
         core_id.insert(p);

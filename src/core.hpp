@@ -128,7 +128,8 @@ private:
   //for buffer record
   unordered_map<string, unordered_set<int>> _core_buffer;//layername,corresponding transfer
   unordered_set<int>_left_data;
-  vector<vector< pair<vector<int>, unordered_set<int>>>> o_buf;//each entry of vector is an output_buffer;
+  vector<vector<pair<vector<int>, unordered_set<int>>>> o_buf;//each entry of vector is an output_buffer;
+  vector<pair<int,string>> obuf_wl_id;
   //<transfer_id,vector<destination,size>>
   unordered_map<int, int> id_ddr_rel;//ddr relates to transfer_id
   // signal

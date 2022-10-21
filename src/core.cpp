@@ -82,6 +82,7 @@ Core::Core(const Configuration& config, int id, const nlohmann::json &j)
    _all_fn = false;
    _running = false;
    o_buf.resize(_num_obuf);
+   obuf_wl_id.resize(_num_obuf);
    _cur_rc_obuf=0;
    _cur_sd_obuf=-1;
    _mcast_ddr_rid = 0;
@@ -130,7 +131,7 @@ void Core::_update()
 					temp.second.insert(-1);
 					temp1.second.insert(-1);
 				}
-				else if (y["id"] != _core_id) {
+				else if (y["id"] != stoi(_core_id)) {
 					temp.second.insert(y["id"].get<int>());
 					temp1.second.insert(y["id"].get<int>());//
 					_cur_wl_rq[x["transfer_id"].get<int>()].insert(y["id"].get<int>());
@@ -151,8 +152,12 @@ void Core::_update()
 						_cur_wl_rq[x.first].erase(p);
 						if (_cur_wl_rq[x.first].empty()) {
 							_cur_wl_rq.erase(x.first);
+							break;
 						}
 					}
+				}
+				if (_cur_wl_rq.empty()) {
+					break;
 				}
 			}
 		}
@@ -214,6 +219,9 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 					f->to_ddr = true;
 					f->mdest.first.reserve(_ddr_num);
 				}
+				else {
+					f->dest = _s_rq_list[p][0];
+				}
 				f->size = _s_rq_list[p][1];
 				f->tail = true;
 				f->head = true;
@@ -242,7 +250,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 		} while (!finish);
 	}
 	
-	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1&& _cur_wl_rq.empty()&&!_overall_end) {
+	else if (_requirements_to_send.empty()  && empty && _cur_sd_obuf!=-1&&!_overall_end) {
 		assert(!o_buf[_cur_sd_obuf].empty(),"wrong empty");
 		_send_data(_flits_sending);
 		if (_wl_end) {
@@ -262,6 +270,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 void Core::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
 	if (f->nn_type == 5) {
+		cout << "this core is = " << _core_id << " receive requirement transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
 		if (_cur_wl_rq.count(f->transfer_id) == 0) {
 			_r_rq_list[f->transfer_id].insert(f->src);
 		}
@@ -274,13 +283,15 @@ void Core::receive_message(Flit*f) {
 	}
 	if (f->nn_type == 6) {
 		_s_rq_list[f->transfer_id][1] = _s_rq_list[f->transfer_id][1] - f->size;
+		cout << "this core is = " << _core_id << " receive transfer_id " << f->transfer_id << " src= " << f->src <<"size = "<<f->size << " inject time = " << f->ctime << "\n";
 		if (f->end) {
-			cout << "receive end transfer_id " << f->transfer_id << " src= "<<f->src<< " inject time = "<<f->ctime<< "\n";
+			cout <<"this core is = "<<_core_id<< " receive end transfer_id " << f->transfer_id << " src= "<<f->src<< " inject time = "<<f->ctime<< "\n";
 			_s_rq_list[f->transfer_id][2] = _s_rq_list[f->transfer_id][2] - 1;
 			assert(_s_rq_list[f->transfer_id][2] >= 0);
 		}
 		if (_s_rq_list[f->transfer_id][1] == 0) {
 			assert(_s_rq_list[f->transfer_id][2] == 0);
+			_s_rq_list.erase(f->transfer_id);
 			_core_buffer[f->layer_name].insert(f->transfer_id);
 			_left_data.erase(f->transfer_id);
 			_dataready = _left_data.empty();
@@ -313,15 +324,21 @@ void Core::_buffer_update()
 	for (auto& x : _j[_core_id][_cur_id]["buffer"]) {
 		if (x["newly_added"].get<bool>() == true) {
 			for (auto &y : x["source"]) {
+				
+				if (y["id"] == stoi(_core_id)) {
+					_core_buffer[x["layer"]].insert(y["transfer_id"].get<int>());
+				}
+				if (_core_buffer.count(x["layer"])) {
+					if (_core_buffer[x["layer"]].count(y["transfer_id"])) {
+						continue;
+					}
+				}
 				_s_rq_list[y["transfer_id"]].resize(3);
 				if (y["type"].get<string>().compare("DRAM") != 0) {
 					_s_rq_list[y["transfer_id"]][0]=y["id"].get<int>();
 					_s_rq_list[y["transfer_id"]][1]=y["size"].get<int>();
 					_s_rq_list[y["transfer_id"]][2] = 1;
-				}
-				else if (y["id"] == _core_id) {
-					_core_buffer[_layer_name].insert(y["transfer_id"].get<int>());
-				}else{
+				}else if(y["id"] != stoi(_core_id)){
 					_s_rq_list[y["transfer_id"]][0]=-1;
 					_s_rq_list[y["transfer_id"]][1] = y["size"].get<int>();
 					_s_rq_list[y["transfer_id"]][2] = _interleave?_ddr_num:1;//to revise it into ddr group number
@@ -395,8 +412,10 @@ bool Core::_generate_next_rc_obuf_id() {
 bool Core::_generate_next_sd_obuf_id() {
 	for (int i = 0; i < _num_obuf; i++) {
 		if (i!=_cur_rc_obuf &&  !o_buf[i].empty()) {
-			_cur_sd_obuf = i;
-			return true;
+			if (obuf_wl_id[i].first < _cur_id || _cur_wl_rq.empty()) {
+				_cur_sd_obuf = i;
+				return true;
+			}
 		}
 	}
 	_cur_sd_obuf = -1;
@@ -412,16 +431,20 @@ vector<int>& Core::_check_end() {
 }
 void Core::_write_obuf() {
 	o_buf[_cur_rc_obuf].reserve(_tile_size.size());
-	int temp=0;
-	for (auto& x : _tile_size) {
-		o_buf[_cur_rc_obuf].push_back(x.front());
-		x.pop_front();
-		if (x.empty()) {
-			_tile_size.erase(_tile_size.begin()+temp);
+	obuf_wl_id[_cur_rc_obuf].first = _cur_id;
+	obuf_wl_id[_cur_rc_obuf].second = _layer_name;
+	int i;
+	int size = _tile_size.size();
+	for (i = 0; i < size ;i++) {
+		o_buf[_cur_rc_obuf].push_back(_tile_size[i].front());
+		_tile_size[i].pop_front();
+		if (_tile_size[i].empty()) {
+			_tile_size.erase(_tile_size.begin()+i);
+			size = size - 1;
+			i = i - 1;
 		}
-		temp = temp + 1;
 	}
-	_mini_tile_num = temp;
+	_mini_tile_num = i;
 }
 
 void Core::_send_data(list<Flit*>& _flits_sending) {
@@ -445,6 +468,7 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 		int ddr_initial = o_buf[_cur_sd_obuf][_sd_mini_tile_id].second.size() * _ddr_num;
 		bool end = false;
 		bool mflas_temp = false;
+		string name = obuf_wl_id[_cur_sd_obuf].second;
 		o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] = o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[1] - size;
 		_send_data_list[transfer_id] = _send_data_list[transfer_id] - size;
 		//				cout << "_send_data"<<_send_data_list[o_buf[_cur_sd_obuf][_sd_mini_tile_id].first[0]] << "\n";
@@ -489,13 +513,14 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 			f->ctime = _time;
 			f->mflag = mflas_temp;
 			f->transfer_id = transfer_id;
-			f->layer_name = _layer_name;
-			if (f->head) {				
-				if (destinations.size() > 1) {
+			f->layer_name = name;
+			if (f->head) {
+				int size_temp = destinations.size();
+				if (size_temp > 1) {
 					f->mflag = true;
 					mflas_temp = true;
 					for (auto& x : destinations) {
-						f->mdest.first.reserve(ddr_initial);
+						f->mdest.first.reserve(ddr_initial+size_temp);
 						if (x != -1)
 							f->mdest.first.push_back(x);
 						else {
@@ -516,14 +541,14 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 								}
 							}
 							else {
-								for (int p = 0; p <= _ddr_num; p++) {
+								for (int p = 0; p < _ddr_num; p++) {
 									f->mdest.first.push_back(_ddr_id[p * _ddr_rnum + rand() % _ddr_rnum]);
 								}
 							}
 						}
 					}
 				}
-				else if (destinations.size() == 1) {
+				else if (size_temp == 1) {
 					f->mdest.first.reserve(ddr_initial);
 					for (auto& x : destinations) {
 						if (x != -1) {

@@ -74,7 +74,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 2;
   _int_map["Core_num"] = 2;
-  AddStrField("Core_routers", "{4}");//these location has cores, some routers can be idle
+  AddStrField("Core_routers", "{1,4}");//these location has cores, some routers can be idle
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
 
   //after the DDR receives its requirement, it can send data. 
