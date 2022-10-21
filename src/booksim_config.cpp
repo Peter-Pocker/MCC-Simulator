@@ -72,7 +72,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["DDR_lanes"] = 32;
   _int_map["DDR_fq"] = 16; //frequency / gbps
   _int_map["core_fq"] = 1; //frequency / gbps
-  _int_map["DDR_num"] = 2;
+  _int_map["DDR_num"] = 4;
   _int_map["Core_num"] = 2;
   AddStrField("Core_routers", "{1,4}");//these location has cores, some routers can be idle
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
@@ -85,9 +85,9 @@ BookSimConfig::BookSimConfig( )
   //todo DDR number,router for each DDR, DDR group(add this,number & ddr for this group)
 
   //Core configuration
-  _int_map["num_obuf"] = 4;
+  _int_map["num_obuf"] = 8;
   _int_map["flit_width"] = 512;
-  _int_map["sending_granularity"] = 1;//output sending granularity
+  _int_map["sending_granularity"] = 8;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 1;
 
   //==== Topology options =======================

@@ -141,6 +141,33 @@ void Core::_update()
 			temp2.push_back(temp1);
 			_tile_size.push_back(temp2);
 		}
+		
+		for (auto it = _cur_wl_rq.begin(); it != _cur_wl_rq.end();) {
+			if (_r_rq_list.count(it->first) != 0) {
+				for (auto it1 = it->second.begin(); it1 != it->second.end();) {
+					if (_r_rq_list[it->first].count(*it1) != 0) {
+						_r_rq_list[it->first].erase(*it1);	
+						_cur_wl_rq[it->first].erase(it1++);
+					}
+					else {
+						++it1;
+					}
+				}
+				if (_r_rq_list[it->first].empty()) {
+					_r_rq_list.erase(it->first);
+				}
+				if (_cur_wl_rq[it->first].empty()) {
+					_cur_wl_rq.erase(it++);
+				}
+				else {
+					++it;
+				}
+			}
+			else {
+				++it;
+			}
+		}
+		/*
 		for (auto& x : _cur_wl_rq) {
 			if (_r_rq_list.count(x.first) != 0) {
 				for (auto& p : x.second) {
@@ -160,7 +187,7 @@ void Core::_update()
 					break;
 				}
 			}
-		}
+		}*/
 			_buffer_update();
 			_dataready = _data_ready();
 		}
