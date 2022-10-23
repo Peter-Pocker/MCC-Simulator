@@ -59,13 +59,13 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	_flit_width = config.GetInt("flit_width");
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
 	assert(_ddr_id >= 0 && _ddr_id <= _ddr_num);
-	for (auto& x : j[to_string(-1)]["ifmap"]) {
+	for (auto& x : j[to_string(-1)]["in"]) {
 			for (auto& y : x["related_ofmap"]) {
 				_ifm_to_ofm[x["transfer_id"]].insert(y.get<int>());
 			}
 	}
-	for (auto& x : j[to_string(-1)]["ofmap"]) {
-		_ofm_message[x["transfer_id"]].first.first.resize(2);
+	for (auto& x : j[to_string(-1)]["out"]) {
+		_ofm_message[x["transfer_id"]].first.first.resize(3);
 		_ofm_message[x["transfer_id"]].first.first[0] = x["related_ifmap"].size();
 		if (_ddr_id != _ddr_num) {
 			_ofm_message[x["transfer_id"]].first.first[1] = x["size"].get<int>()/_ddr_num;
@@ -73,15 +73,13 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 		else {
 			_ofm_message[x["transfer_id"]].first.first[1] = x["size"].get<int>() / _ddr_num + x["size"].get<int>() % _ddr_num;
 		}
+		_ofm_message[x["transfer_id"]].first.first[2] = x["destination"].size();
 		_ofm_message[x["transfer_id"]].first.second = x["layer_name"];
 		int i = 0;
 		_ofm_message[x["transfer_id"]].second.resize(x["destination"].size());
 		for (auto& y : x["destination"]) {
 			_ofm_message[x["transfer_id"]].second[i]=(y["id"].get<int>());
 			i = i + 1;
-		}
-		if (_ofm_message[x["transfer_id"]].first.first[0] == 0) {
-			_ready_list.insert(x["transfer_id"].get<int>());
 		}
 	}
 }  
@@ -127,10 +125,9 @@ void DDR::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
 	if (f->nn_type == 5) {
 		cout << "this DDR is = " << _ddr_id << " receive requirement transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
-		if (!_ready_list.count(f->transfer_id) > 0) {
-			_r_rq_list.insert(f->transfer_id);
-		}
-		else if(_ready_list.count(f->transfer_id) > 0 ){
+		_ofm_message[f->transfer_id].first.first[2] = _ofm_message[f->transfer_id].first.first[2] - 1;
+		assert(_ofm_message[f->transfer_id].first.first[2] >= 0);
+		if (_ofm_message[f->transfer_id].first.first[2] == 0 && _ofm_message[f->transfer_id].first.first[0] == 0) {
 			vector<int> temp(2);
 			temp[0] = f->transfer_id;
 			temp[1] = _ofm_message[f->transfer_id].first.first[1];
@@ -142,19 +139,18 @@ void DDR::receive_message(Flit*f) {
 	}
 	if (f->nn_type == 6 && f->end) {
 		cout << "this DDR is = " << _ddr_id << " receive end transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
-		unordered_set<int> temp=_ifm_to_ofm[f->transfer_id];
+//		unordered_set<int> temp=_ifm_to_ofm[f->transfer_id];
 		if (!_ifm_to_ofm[f->transfer_id].empty()) {
 			for (auto& x : _ifm_to_ofm[f->transfer_id]) {
 				_ofm_message[x].first.first[0] = _ofm_message[x].first.first[0] - 1;
 //				assert(_ofm_message[x].first.first[0]);
-				if (_ofm_message[x].first.first[0] == 0) {
-					_ready_list.insert(x);
-					if (_r_rq_list.count(x) > 0) {
+				if (_ofm_message[x].first.first[0] == 0 && _ofm_message[x].first.first[2] == 0) {
+					
 						vector<int> temp(2);
 						temp[0] = x;
 						temp[1] = _ofm_message[x].first.first[1];
 						_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[x].first.second), _ofm_message[x].second));//to do when an entry is empty, drain pending_data firstly
-					}
+					
 				}
 			}
 		}
@@ -173,6 +169,7 @@ void DDR::_send_data(list<Flit*>& _flits_sending) {
 		f->size = _packet_to_send.front().first.second.first[1];
 		f->layer_name = _packet_to_send.front().first.second.second;
 		f->transfer_id = _packet_to_send.front().first.second.first[0];
+		
 		f->end = _packet_to_send.front().first.first;
 		f->from_ddr = true;
 		if (f->head) {
@@ -185,6 +182,11 @@ void DDR::_send_data(list<Flit*>& _flits_sending) {
 			}
 		}
 		_flits_sending.push_back(f);
+	}
+	if (_packet_to_send.front().first.first) {
+		cout << " send_data at time " << _time << "ddr \n";
+		cout << "this ddr is = " << _ddr_id << " receive transfer_id " << _packet_to_send.front().first.second.first[0] << " src= " << "size = "
+			<< _packet_to_send.front().first.second.first[1] << "end = " << _packet_to_send.front().first.first << "\n";
 	}
 	_packet_to_send.pop_front();
 }

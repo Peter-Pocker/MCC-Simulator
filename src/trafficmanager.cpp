@@ -388,7 +388,8 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _hub[i] = _net[i]->GetHubs();
     }
     json j;
-    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_2c2w2d_1.json") >> j;
+    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_3x3_batch2\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_2c2w2d_1.json") >> j;
     
     for (auto& p : config.GetIntArray("Core_routers")) {
         core_id.insert(p);
@@ -1442,7 +1443,7 @@ void TrafficManager::_Inject()
                         }
                         f->pid = pid;
                         f->watch = watch | (gWatchOut && (_flits_to_watch.count(f->id) > 0));
-                        
+                        f->mflag = mflag_temp;
                         f->cl = c;
                         f->src = i;
  //                       f->ctime = _time;
@@ -1929,6 +1930,7 @@ void TrafficManager::_Step()
     }
 
     ++_time;
+    cout << "time = " << _time <<"\n";
     assert(_time);
     if (gTrace)
     {

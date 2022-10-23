@@ -4456,7 +4456,7 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
    */
   Flit * f_dup;
   
-  int temp_size = cf->flits_num;
+  int temp_size = _packet_size;
   if(cf->type == Flit::READ_REPLY)
     temp_size = _read_reply_size;
   else if(cf->type == Flit::WRITE_REPLY)

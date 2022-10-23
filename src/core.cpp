@@ -141,7 +141,7 @@ void Core::_update()
 			temp2.push_back(temp1);
 			_tile_size.push_back(temp2);
 		}
-		
+		/**/
 		for (auto it = _cur_wl_rq.begin(); it != _cur_wl_rq.end();) {
 			if (_r_rq_list.count(it->first) != 0) {
 				for (auto it1 = it->second.begin(); it1 != it->second.end();) {

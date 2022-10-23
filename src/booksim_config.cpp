@@ -31,10 +31,18 @@
  *
  */
  /*
+ * 
+ * 4 5 6 7
+ * 0 1 2 3
+ * 
+ * 
+ * 10 11 12 13 14
+ * 5  6  7  8  9
+ * 0  1  2  3  4
  * placement:1-5, 0_1 -> 0_2 -> 1_2 xy
  *  6,7,8
  *  3,4,5
- *  0,1,2
+ *  0,1,2 
  */
 /*
 * placement:1 - 5, 0_1 -> 0_2 -> 1_2 xy
@@ -72,13 +80,15 @@ BookSimConfig::BookSimConfig( )
   _int_map["DDR_lanes"] = 32;
   _int_map["DDR_fq"] = 16; //frequency / gbps
   _int_map["core_fq"] = 1; //frequency / gbps
-  _int_map["DDR_num"] = 4;
-  _int_map["Core_num"] = 2;
-  AddStrField("Core_routers", "{1,4}");//these location has cores, some routers can be idle
+  _int_map["DDR_num"] = 2;
+  _int_map["Core_num"] = 9;
+  AddStrField("Core_routers", "{1,2,3,6,7,8,11,12,13}");//these location has cores, some routers can be idle
+  //AddStrField("Core_routers", "{1,4}");
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
-
+  
   //after the DDR receives its requirement, it can send data. 
-  AddStrField("DDR_routers", "{0,3,2,5}");//grouped by ddr numbers. 
+  AddStrField("DDR_routers", "{0, 5, 10, 4, 9, 14}");//grouped by ddr numbers. 
+  //AddStrField("DDR_routers", "{0,3,2,5}");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
 
@@ -86,7 +96,7 @@ BookSimConfig::BookSimConfig( )
 
   //Core configuration
   _int_map["num_obuf"] = 8;
-  _int_map["flit_width"] = 512;
+  _int_map["flit_width"] = 1024;
   _int_map["sending_granularity"] = 8;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 1;
 
@@ -152,7 +162,7 @@ BookSimConfig::BookSimConfig( )
   
   _int_map["received_queue_size"]  = 32; //Recieved queue size  
   _int_map["num_vcs"]         = 8;  
-  _int_map["vc_buf_size"]     = 24;  //per vc buffer size
+  _int_map["vc_buf_size"]     = 16;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
   AddStrField("buffer_policy", "private"); //buffer sharing policy
 
@@ -342,8 +352,8 @@ BookSimConfig::BookSimConfig( )
 
   AddStrField("watch_file", "test");
   
-  AddStrField("watch_packets", "97");
-  AddStrField("watch_flits", "");
+  AddStrField("watch_packets", "");
+  AddStrField("watch_flits", "94");
   AddStrField("watch_routers", "");
   AddStrField("watch_transactions", "");
 
