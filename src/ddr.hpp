@@ -67,6 +67,8 @@ private:
 	deque<pair<pair<bool,pair<vector<int>, string>>, vector<int>>> _packet_to_send;//packets_to_send. size is one packet of data. 1st int is end singnal
 	unordered_map<int, unordered_set<int>> _ifm_to_ofm;
 	unordered_map<int, pair<pair<vector<int>,string>,vector<int>>> _ofm_message;
+	unordered_set<int> _watch_cores;
+	unordered_set<int> _watch_ids;
 	//int1 is output transfer id, int 2 is input transfer number, int3 ofmap size, int4 destination number
 	int _ddr_id;
 	int _ddr_num;

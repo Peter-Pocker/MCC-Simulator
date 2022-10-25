@@ -106,7 +106,7 @@ private:
   int _mcast_ddr_rid;//current requirement should go to ith router (0-_ddr_id.size()/ddr_num-1)
   list<int>_tile_time;
   vector<list<pair<vector<int>, unordered_set<int>>>>_tile_size;
-  int _mini_tile_num;
+//  int _mini_tile_num;
 
   //vector<int> _ucast_ddr_rid;//current data unicast should go to ith router of xth DDR. (i is in 0-_ddr_id.size()/ddr_num-1; x is in 0-ddr_num-1)
 
@@ -117,7 +117,7 @@ private:
  // std::unordered_map<int,int> wl_map;
   //for loading data (double ckeck)
   unordered_set<int> _rq_to_sent;//transfer_id
-  unordered_map<int, vector<int>> _s_rq_list;//sent_request;the length of the vector is 3, 1st is core_id, 2nd is size, 3rd is number of received end (ddr is >=1)
+  unordered_map<int, pair<unordered_set<string>,vector<int>>> _s_rq_list;//sent_request;the length of the vector is 3, 1st is core_id, 2nd is size, 3rd is number of received end (ddr is >=1)
  // unordered_map<int, int>_r_data_list;//receive_data_size;Each entry is decremented and should end up at 0
   //for sending data
   //unordered_map<int, unordered_set<int>> _r_rq_list;//received_request,first int is transfer_id£¬set is core list.(unicast has 1 entry, multicast has multiple entry)
@@ -128,15 +128,18 @@ private:
   //for buffer record
   unordered_map<string, unordered_set<int>> _core_buffer;//layername,corresponding transfer
   unordered_set<int>_left_data;
-  vector<vector<pair<vector<int>, unordered_set<int>>>> o_buf;//each entry of vector is an output_buffer;
+  vector<pair<vector<pair<vector<int>, unordered_set<int>>>,int>> o_buf;//each entry of vector is an output_buffer;
+  //                                                        mini tile num
   vector<pair<int,string>> obuf_wl_id;
   //<transfer_id,vector<destination,size>>
   unordered_map<int, int> id_ddr_rel;//ddr relates to transfer_id
+  unordered_set<int> _watch_cores;
+  unordered_set<int> _watch_ids;
   // signal
   vector<int>_end_message;
   bool _wl_fn;//workload finish
   bool _all_fn;//all workload finsh
-
+  bool _next_start;//the requirement of the current workload is all on site;
 };
 
 //ostream& operator<<( ostream& os, const Flit& f );

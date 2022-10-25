@@ -388,7 +388,8 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _hub[i] = _net[i]->GetHubs();
     }
     json j;
-    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_3x3_batch2\\IR.json") >> j;
+    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\goog_3x3_batch2\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_3x3_batch2\\IR.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_2c2w2d_1.json") >> j;
     
     for (auto& p : config.GetIntArray("Core_routers")) {
@@ -498,6 +499,12 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     for (size_t i = 0; i < watch_flits.size(); ++i)
     {
         _flits_to_watch.insert(watch_flits[i]);
+    }
+
+    vector<int> watch_transfers = config.GetIntArray("watch_transfer_id");
+    for (size_t i = 0; i < watch_transfers.size(); ++i)
+    {
+        _transfers_to_watch.insert(watch_transfers[i]);
     }
 
     vector<int> watch_packets = config.GetIntArray("watch_packets");
@@ -1416,15 +1423,8 @@ void TrafficManager::_Inject()
                             total_count++;
                             pid = _cur_pid++;
                             f->pid = pid;
-                            watch = gWatchOut && (_packets_to_watch.count(f->pid) > 0);
-                            if (watch || (_routers_to_watch.count(i) > 0))
-                            {
-                                *gWatchOut << GetSimTime() << " | "
-                                    << "node" << i << " | "
-                                    << "Enqueuing packet " << pid
-                                    << " at time " << _time
-                                    << "." << endl;
-                            }
+                            watch = gWatchOut && (_packets_to_watch.count(f->pid) > 0 || _transfers_to_watch.count(f->transfer_id)>0);
+                            
                             if(f->mflag){
                             mcastcount++;
                             f->oid = f->id;
@@ -1432,14 +1432,7 @@ void TrafficManager::_Inject()
                             non_mdnd_hops += latest_mdnd_hop;
                             mflag_temp = f->mflag;
                             }
-                            if ( f->watch || (_routers_to_watch.count(i) > 0))
-                            {
-                                *gWatchOut << "Pid " << f->pid << " Destinations are: " << endl;
-                                for (int i = 0; i < f->mdest.first.size(); i++) {
-                                    *gWatchOut << f->mdest.first[i] << " ";
-                                }
-                                *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << i << endl;
-                            }
+                            
                         }
                         f->pid = pid;
                         f->watch = watch | (gWatchOut && (_flits_to_watch.count(f->id) > 0));
@@ -1496,18 +1489,26 @@ void TrafficManager::_Inject()
                        
                         // Potentially generate packets for any (input,class)
                         // that is currently empty
-                        if (f->watch || (_routers_to_watch.count(i) > 0))
+                        if (watch || (_routers_to_watch.count(i) > 0))
                         {
                             *gWatchOut << GetSimTime() << " | "
                                 << "node" << i << " | "
-                                << "Enqueuing flit " << f->id
-                                << " (packet " << f->pid
-                                << ") at time " << _time
+                                << "Enqueuing packet " << pid
+                                << " at time " << _time
+                                << " transfer_id = " << f->transfer_id
+                                << " nn type = " << f->nn_type
                                 << " to node " << f->dest
                                 << " | mcast " << f->mflag
                                 << "." << endl;
                         }
-
+                        if (watch && f->head && f->mflag)
+                        {
+                            *gWatchOut << "Pid " << f->pid << " Destinations are: " << endl;
+                            for (int i = 0; i < f->mdest.first.size(); i++) {
+                                *gWatchOut << f->mdest.first[i] << " ";
+                            }
+                            *gWatchOut << "num dests " << f->mdest.first.size() << " simtime " << GetSimTime() << " source " << i << endl;
+                        }
                         
 
                         _partial_packets[i][c].push_back(f);
@@ -1536,6 +1537,20 @@ void TrafficManager::_Step()
     {
         _deadlock_timer = 0;
         cout << "WARNING: Possible network deadlock.\n";
+        for (auto& x : _total_in_flight_flits[0]) {
+            *gWatchOut << "flit_id = "<< x.second->id
+                << "packet_id = " << x.second->pid
+                << " mflag  = "<< x.second->mflag
+                << ", src = " << x.second->src
+                << ", dest = " << x.second->dest
+                << ", nn_type =" << x.second->nn_type
+                << ", transfer_id = " << x.second->transfer_id
+                << ", from_ddr =" << x.second->from_ddr
+                << ", size =" << x.second->size
+                << " layer_name =" << x.second->layer_name<<"\n";
+        }
+        *gWatchOut << "****************************************" << "\n";
+        *gWatchOut << "" << "\n";
     }
 
     vector<map<int, Flit *> > flits(_subnets);
@@ -1930,7 +1945,7 @@ void TrafficManager::_Step()
     }
 
     ++_time;
-    cout << "time = " << _time <<"\n";
+//    cout << "time = " << _time <<"\n";
     assert(_time);
     if (gTrace)
     {

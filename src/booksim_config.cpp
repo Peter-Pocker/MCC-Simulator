@@ -96,13 +96,13 @@ BookSimConfig::BookSimConfig( )
 
   //Core configuration
   _int_map["num_obuf"] = 8;
-  _int_map["flit_width"] = 1024;
+  _int_map["flit_width"] = 10240;
   _int_map["sending_granularity"] = 8;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 1;
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
-  _int_map["k"] = 3; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
+  _int_map["k"] = 5; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 0; // Bransan number of wireless routers
@@ -346,15 +346,18 @@ BookSimConfig::BookSimConfig( )
 
   _int_map["print_csv_results"] = 0;
 
-  _int_map["deadlock_warn_timeout"] = 256;
+  _int_map["deadlock_warn_timeout"] = 10000;
 
   _int_map["viewer_trace"] = 0;
 
   AddStrField("watch_file", "test");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "94");
+  AddStrField("watch_flits", "");
+  AddStrField("watch_transfer_id", "213");
   AddStrField("watch_routers", "");
+  AddStrField("watch_cores", "{1,2,3,6,7,8,11,12,13}");
+  AddStrField("watch_ddrs", "");
   AddStrField("watch_transactions", "");
 
   AddStrField("watch_out", "test.txt");
