@@ -96,7 +96,7 @@ BookSimConfig::BookSimConfig( )
 
   //Core configuration
   _int_map["num_obuf"] = 8;
-  _int_map["flit_width"] = 10240;
+  _int_map["flit_width"] = 4096;
   _int_map["sending_granularity"] = 8;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 1;
 
@@ -354,9 +354,9 @@ BookSimConfig::BookSimConfig( )
   
   AddStrField("watch_packets", "");
   AddStrField("watch_flits", "");
-  AddStrField("watch_transfer_id", "213");
+  AddStrField("watch_transfer_id", "399");
   AddStrField("watch_routers", "");
-  AddStrField("watch_cores", "{1,2,3,6,7,8,11,12,13}");
+  AddStrField("watch_cores", "{13}");//1,2,3,6,7,8,11,12,
   AddStrField("watch_ddrs", "");
   AddStrField("watch_transactions", "");
 

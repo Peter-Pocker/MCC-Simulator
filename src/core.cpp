@@ -234,17 +234,20 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 			if (_watch_cores.count(stoi(_core_id)) > 0) {
 				int here = 1;
 			}
-			_write_obuf();
+			
 			_tile_time.pop_front();
 //			cout << "_tile_time = " << _tile_time.size() << "\n";
 //			cout << "_tile_size = " << _tile_size.size() << "\n";
-			_generate_next_rc_obuf_id();
+			if (!_tile_size.empty()) {
+				_write_obuf();
+				_generate_next_rc_obuf_id();
+			}
 			_generate_next_sd_obuf_id();
 			if (_tile_time.empty()) {
 				assert(_tile_size.empty());
 				_wl_fn = true;
 				cnt1 = 0;
-				if (_watch_cores.count(stoi(_core_id))>0 ) {
+				if (_watch_cores.count(stoi(_core_id))>0 ){
 					cout << "this core is = " << _core_id << " cur_id " << _cur_id << " is finished at " <<_time << " left_workload = "<<_wl_num-1-_cur_id<<"\n";
 				}
 			} else if (_cur_rc_obuf == -1 ) {
@@ -513,15 +516,17 @@ bool Core::_generate_next_rc_obuf_id() {
 }
 
 bool Core::_generate_next_sd_obuf_id() {
-	for (int i = 0; i < _num_obuf; i++) {
-		if (i!=_cur_rc_obuf &&  !o_buf[i].first.empty()) {
-			if (obuf_wl_id[i].first < _cur_id || _cur_wl_rq.empty()) {
-				_cur_sd_obuf = i;
-				return true;
+	if(_cur_sd_obuf==-1 || o_buf[_cur_sd_obuf].first.empty()) {
+		for (int i = 0; i < _num_obuf; i++) {
+			if (i != _cur_rc_obuf && !o_buf[i].first.empty()) {
+				if (obuf_wl_id[i].first < _cur_id || _cur_wl_rq.empty()) {
+					_cur_sd_obuf = i;
+					return true;
+				}
 			}
 		}
+		_cur_sd_obuf = -1;
 	}
-	_cur_sd_obuf = -1;
 	return false;
 }
 

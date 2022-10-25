@@ -89,6 +89,7 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 		for (auto& y : x["destination"]) {
 			temp_dest.insert(y["id"].get<int>());
 		}
+		_ofm_message[x["transfer_id"]].first.first[2] = temp_dest.size();
 		for (auto& y : temp_dest) {
 			_ofm_message[x["transfer_id"]].second.push_back(y);
 		}
