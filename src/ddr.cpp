@@ -182,6 +182,7 @@ void DDR::receive_message(Flit*f) {
 
 void DDR::_send_data(list<Flit*>& _flits_sending) {
 	int flits = (_packet_to_send.front().first.second.first[1] - 1) / _flit_width + 1;//data part, need to add head fli
+	int mflag_tmp = false;
 	for (int i = 0; i < flits + 1; i++) {
 		Flit* f = Flit::New();
 		f->nn_type = 6;
@@ -191,12 +192,13 @@ void DDR::_send_data(list<Flit*>& _flits_sending) {
 		f->size = _packet_to_send.front().first.second.first[1];
 		f->layer_name = _packet_to_send.front().first.second.second;
 		f->transfer_id = _packet_to_send.front().first.second.first[0];
-		
+		f->mflag = mflag_tmp;
 		f->end = _packet_to_send.front().first.first;
 		f->from_ddr = true;
 		if (f->head) {
 			if (_packet_to_send.front().second.size() > 1) {
 				f->mflag = true;
+				mflag_tmp = true;
 				f->mdest.first = _packet_to_send.front().second;
 			}
 			else {

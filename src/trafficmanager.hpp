@@ -259,6 +259,7 @@ protected:
   set<int> _packets_to_watch;
   set<int> _routers_to_watch;
   set<int> _transfers_to_watch;
+  bool _watch_deadlock;
 
   bool _print_csv_results;
 

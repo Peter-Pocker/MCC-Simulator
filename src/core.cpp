@@ -516,7 +516,18 @@ bool Core::_generate_next_rc_obuf_id() {
 }
 
 bool Core::_generate_next_sd_obuf_id() {
-	if(_cur_sd_obuf==-1 || o_buf[_cur_sd_obuf].first.empty()) {
+	if(_cur_sd_obuf==-1 ) {
+		for (int i = 0; i < _num_obuf; i++) {
+			if (i != _cur_rc_obuf && !o_buf[i].first.empty()) {
+				if (obuf_wl_id[i].first < _cur_id || _cur_wl_rq.empty()) {
+					_cur_sd_obuf = i;
+					return true;
+				}
+			}
+		}
+		_cur_sd_obuf = -1;
+	}
+	else if(o_buf[_cur_sd_obuf].first.empty()){
 		for (int i = 0; i < _num_obuf; i++) {
 			if (i != _cur_rc_obuf && !o_buf[i].first.empty()) {
 				if (obuf_wl_id[i].first < _cur_id || _cur_wl_rq.empty()) {

@@ -95,10 +95,10 @@ BookSimConfig::BookSimConfig( )
   //todo DDR number,router for each DDR, DDR group(add this,number & ddr for this group)
 
   //Core configuration
-  _int_map["num_obuf"] = 8;
-  _int_map["flit_width"] = 4096;
-  _int_map["sending_granularity"] = 8;//output sending granularity
-  _int_map["sending_granularity_lowerbound"] = 1;
+  _int_map["num_obuf"] = 3;
+  _int_map["flit_width"] = 1024;
+  _int_map["sending_granularity"] = 10;//output sending granularity
+  _int_map["sending_granularity_lowerbound"] = 2;
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
@@ -349,12 +349,12 @@ BookSimConfig::BookSimConfig( )
   _int_map["deadlock_warn_timeout"] = 10000;
 
   _int_map["viewer_trace"] = 0;
-
+  _int_map["watch_deadlock"] = 0;
   AddStrField("watch_file", "test");
   
   AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "");
-  AddStrField("watch_transfer_id", "399");
+  AddStrField("watch_flits", "394239");
+  AddStrField("watch_transfer_id", "");
   AddStrField("watch_routers", "");
   AddStrField("watch_cores", "{13}");//1,2,3,6,7,8,11,12,
   AddStrField("watch_ddrs", "");

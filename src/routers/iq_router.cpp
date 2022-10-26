@@ -13,7 +13,7 @@
  list of conditions and the following disclaimer in the documentation and/or
  other materials provided with the distribution.
 
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS " aS IS" AND
  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
@@ -115,7 +115,7 @@ IQRouter::IQRouter(Configuration const &config, Module *parent,
   for (int i = 0; i < _inputs; ++i)
   {
     ostringstream module_name;
-    module_name << "buf_" << i;
+    module_name << " buf_" << i;
    
     _buf[i] = new Buffer(config, _outputs, this, module_name.str(),0);
     
@@ -494,7 +494,7 @@ void IQRouter::_InputQueuing()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID()   
-                 << "Adding flit " << f->id 
+                 << " adding flit " << f->id 
                  <<" to input " << input << " VC " << vc
                  << " (state: " << VC::VCSTATE[cur_buf->GetState(vc)];
       if (cur_buf->Empty(vc))
@@ -650,7 +650,7 @@ void IQRouter::_InputQueuing()
     }
 #endif
     // if(GetID() == 56 && output == 5)
-      // cout<<"Credit id "<<c->id<<endl;
+      // cout<<" credit id "<<c->id<<endl;
     //   if(GetSimTime()>=999)
     // cout<<"just error iqc\n";
     dest_buf->ProcessCredit(c);
@@ -699,7 +699,7 @@ void IQRouter::_RouteEvaluate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Beginning routing for VC " << vc
+                 << " beginning routing for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -740,7 +740,7 @@ void IQRouter::_RouteUpdate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Completed routing for VC " << vc
+                 << " completed routing for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -803,7 +803,7 @@ void IQRouter::_VCAllocEvaluate()
     {
       // cout<<"TIme is "<<time<<endl;
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Beginning VC allocation for VC " << vc
+                 << " Beginning VC allocation for VC " << vc
                  << " at input " << input
                  << " (front fid = : " << f->id << " pid = "<<f->pid << " mflag = "<< f->mflag
                  << ")." << endl;
@@ -995,7 +995,7 @@ void IQRouter::_VCAllocEvaluate()
       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                   << "Assigning VC " << match_vc
+                   << " Assigning VC " << match_vc
                    << " at output " << match_output
                    << " to VC " << vc
                    << " at input " << input <<" (front fid = "<< f->id << " pid = " <<f->pid
@@ -1010,7 +1010,7 @@ void IQRouter::_VCAllocEvaluate()
       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                   << "VC allocation failed for VC " << vc
+                   << " VC allocation failed for VC " << vc
                    << " at input " << input << " (front fid = " << f->id << " pid = " << f->pid
                    << "." << endl;
       }
@@ -1069,7 +1069,7 @@ void IQRouter::_VCAllocEvaluate()
         if (f->watch)
         {
           *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                     << "  Discarding previously generated grant for VC " << vc
+                     << " Discarding previously generated grant for VC " << vc
                      << " at input " << input
                      << ": VC " << match_vc
                      << " at output " << match_output
@@ -1082,7 +1082,7 @@ void IQRouter::_VCAllocEvaluate()
         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         {
           *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                     << "  Discarding previously generated grant for VC " << vc
+                     << " Discarding previously generated grant for VC " << vc
                      << " at input " << input
                      << ": VC " << match_vc
                      << " at output " << match_output
@@ -1129,7 +1129,7 @@ void IQRouter::_VCAllocUpdate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Completed VC allocation for VC " << vc
+                 << " Completed VC allocation for VC " << vc
                  << " at input " << input
                  << " (front fid= " << f->id << " pid= " << f->pid
                  << ")." << endl;
@@ -1231,7 +1231,7 @@ void IQRouter::_SWHoldEvaluate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Beginning held switch allocation for VC " << vc
+                 << " beginning held switch allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -1313,7 +1313,7 @@ void IQRouter::_SWHoldUpdate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Completed held switch allocation for VC " << vc
+                 << " completed held switch allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -1705,7 +1705,7 @@ void IQRouter::_SWAllocEvaluate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Beginning switch allocation for VC " << vc
+                 << " beginning switch allocation for VC " << vc
                  << " at input " << input
                  << " (front fid: " << f->id << " pid = "<<f->pid 
                  << ")." << endl;
@@ -1913,7 +1913,7 @@ void IQRouter::_SWAllocEvaluate()
         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         {
           *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                     << "Assigning output " << (expanded_output / _output_speedup)
+                     << " assigning output " << (expanded_output / _output_speedup)
                      << "." << (expanded_output % _output_speedup)
                      << " to VC " << vc
                      << " at input " << input
@@ -1947,7 +1947,7 @@ void IQRouter::_SWAllocEvaluate()
           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
           {
             *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                       << "Discarding speculative grant for VC " << vc
+                       << " Discarding speculative grant for VC " << vc
                        << " at input " << input
                        << "." << (vc % _input_speedup)
                        << " because output " << (expanded_output / _output_speedup)
@@ -1962,7 +1962,7 @@ void IQRouter::_SWAllocEvaluate()
           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
           {
             *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                       << "Discarding speculative grant for VC " << vc
+                       << " Discarding speculative grant for VC " << vc
                        << " at input " << input
                        << "." << (vc % _input_speedup)
                        << " because output " << (expanded_output / _output_speedup)
@@ -1980,7 +1980,7 @@ void IQRouter::_SWAllocEvaluate()
             if (f->watch || (_routers_to_watch.count(GetID()) > 0))
             {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                         << "Assigning output " << (expanded_output / _output_speedup)
+                         << " assigning output " << (expanded_output / _output_speedup)
                          << "." << (expanded_output % _output_speedup)
                          << " to VC " << vc
                          << " at input " << input
@@ -2085,7 +2085,7 @@ void IQRouter::_SWAllocEvaluate()
         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         {
           *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                     << "Discarding grant from input " << input
+                     << " Discarding grant from input " << input
                      << "." << (vc % _input_speedup)
                      << " to output " << output
                      << "." << (expanded_output % _output_speedup)
@@ -2124,7 +2124,7 @@ void IQRouter::_SWAllocEvaluate()
             if (f->watch || (_routers_to_watch.count(GetID()) > 0))
             {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                         << "Discarding grant from input " << input
+                         << " Discarding grant from input " << input
                          << "." << (vc % _input_speedup)
                          << " to output " << output
                          << "." << (expanded_output % _output_speedup)
@@ -2137,7 +2137,7 @@ void IQRouter::_SWAllocEvaluate()
             if (f->watch || (_routers_to_watch.count(GetID()) > 0))
             {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                         << "Discarding grant from input " << input
+                         << " Discarding grant from input " << input
                          << "." << (vc % _input_speedup)
                          << " to output " << output
                          << "." << (expanded_output % _output_speedup)
@@ -2150,7 +2150,7 @@ void IQRouter::_SWAllocEvaluate()
             if (f->watch || (_routers_to_watch.count(GetID()) > 0))
             {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                         << "Discarding grant from input " << input
+                         << " Discarding grant from input " << input
                          << "." << (vc % _input_speedup)
                          << " to output " << output
                          << "." << (expanded_output % _output_speedup)
@@ -2227,7 +2227,7 @@ void IQRouter::_SWAllocEvaluate()
             if (f->watch || (_routers_to_watch.count(GetID()) > 0))
             {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                         << "Discarding grant from input " << input
+                         << " Discarding grant from input " << input
                          << "." << (vc % _input_speedup)
                          << " to output " << output
                          << "." << (expanded_output % _output_speedup)
@@ -2240,7 +2240,7 @@ void IQRouter::_SWAllocEvaluate()
             if (f->watch || (_routers_to_watch.count(GetID()) > 0))
             {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                         << "Discarding grant from input " << input
+                         << " Discarding grant from input " << input
                          << "." << (vc % _input_speedup)
                          << " to output " << output
                          << "." << (expanded_output % _output_speedup)
@@ -2306,7 +2306,7 @@ void IQRouter::_SWAllocUpdate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Completed switch allocation for VC " << vc
+                 << " completed switch allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -2482,7 +2482,7 @@ void IQRouter::_SWAllocUpdate()
             if (f->watch || (_routers_to_watch.count(GetID()) > 0))
             {
               *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                         << "Updating lookahead routing information for flit " << f->id
+                         << " Updating lookahead routing information for flit " << f->id
                          << " (NOQ)." << endl;
             }
             int next_output_port = _noq_next_output_port[input][vc];
@@ -2715,7 +2715,7 @@ void IQRouter::_RouteEvaluateMulti()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "mcast Beginning routing for VC " << vc
+                 << " mcast Beginning routing for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -2756,7 +2756,7 @@ void IQRouter::_RouteUpdateMulti()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "mcast Completed routing for VC " << vc
+                 << " mcast Completed routing for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -2824,7 +2824,7 @@ void IQRouter::_VCAllocEvaluateMulti()
     {
       // cout<<"TIme is "<<time<<endl;
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "mcast Beginning VC allocation for VC " << vc
+                 << " mcast Beginning VC allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -3041,13 +3041,13 @@ void IQRouter::_VCAllocEvaluateMulti()
       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                   << "mcast Assigning VC " << match_vc
+                   << " mcast Assigning VC " << match_vc
                    << " at output " << match_output
                    << " to VC " << vc
                    << " at input " << input
                    << "." << endl;
       }
-      // cout<<"assigned vc"<<endl;
+      // cout<<" assigned vc"<<endl;
       iter->second.second.second = output_and_vc;
       
     }
@@ -3057,7 +3057,7 @@ void IQRouter::_VCAllocEvaluateMulti()
       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                   << "mcast VC allocation failed for VC " << vc
+                   << " mcast VC allocation failed for VC " << vc
                    << " at input " << input
                    << "." << endl;
       }
@@ -3180,7 +3180,7 @@ void IQRouter::_VCAllocUpdateMulti()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "mcast Completed VC allocation for VC " << vc
+                 << " mcast Completed VC allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << ")." << endl;
@@ -3414,7 +3414,7 @@ void IQRouter::_SWAllocEvaluateMulti()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "mcast Beginning switch allocation for VC " << vc
+                 << " mcast Beginning switch allocation for VC " << vc
                  << " at input " << input
                  << " (front: " << f->id
                  << "). Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
@@ -3628,7 +3628,7 @@ void IQRouter::_SWAllocEvaluateMulti()
         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         {
           *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                     << "mcast Assigning output " << (expanded_output / _output_speedup)
+                     << " mcast Assigning output " << (expanded_output / _output_speedup)
                      << "." << (expanded_output % _output_speedup)
                      << " to VC " << vc
                      << " at input " << input
@@ -3662,7 +3662,7 @@ void IQRouter::_SWAllocEvaluateMulti()
     //       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     //       {
     //         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-    //                    << "Discarding speculative grant for VC " << vc
+    //                    << " Discarding speculative grant for VC " << vc
     //                    << " at input " << input
     //                    << "." << (vc % _input_speedup)
     //                    << " because output " << (expanded_output / _output_speedup)
@@ -3677,7 +3677,7 @@ void IQRouter::_SWAllocEvaluateMulti()
     //       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     //       {
     //         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-    //                    << "Discarding speculative grant for VC " << vc
+    //                    << " Discarding speculative grant for VC " << vc
     //                    << " at input " << input
     //                    << "." << (vc % _input_speedup)
     //                    << " because output " << (expanded_output / _output_speedup)
@@ -3695,7 +3695,7 @@ void IQRouter::_SWAllocEvaluateMulti()
     //         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     //         {
     //           *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-    //                      << "Assigning output " << (expanded_output / _output_speedup)
+    //                      << " assigning output " << (expanded_output / _output_speedup)
     //                      << "." << (expanded_output % _output_speedup)
     //                      << " to VC " << vc
     //                      << " at input " << input
@@ -3737,7 +3737,7 @@ void IQRouter::_SWAllocEvaluateMulti()
       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
       {
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                   << "mcast Switch allocation failed for VC " << vc
+                   << " mcast Switch allocation failed for VC " << vc
                    << " at input " << input
                    << ": No output granted." << endl;
       }
@@ -3798,7 +3798,7 @@ void IQRouter::_SWAllocEvaluateMulti()
   //       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
   //       {
   //         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-  //                    << "Discarding grant from input " << input
+  //                    << " Discarding grant from input " << input
   //                    << "." << (vc % _input_speedup)
   //                    << " to output " << output
   //                    << "." << (expanded_output % _output_speedup)
@@ -3837,7 +3837,7 @@ void IQRouter::_SWAllocEvaluateMulti()
   //           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
   //           {
   //             *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-  //                        << "Discarding grant from input " << input
+  //                        << " Discarding grant from input " << input
   //                        << "." << (vc % _input_speedup)
   //                        << " to output " << output
   //                        << "." << (expanded_output % _output_speedup)
@@ -3850,7 +3850,7 @@ void IQRouter::_SWAllocEvaluateMulti()
   //           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
   //           {
   //             *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-  //                        << "Discarding grant from input " << input
+  //                        << " Discarding grant from input " << input
   //                        << "." << (vc % _input_speedup)
   //                        << " to output " << output
   //                        << "." << (expanded_output % _output_speedup)
@@ -3863,7 +3863,7 @@ void IQRouter::_SWAllocEvaluateMulti()
   //           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
   //           {
   //             *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-  //                        << "Discarding grant from input " << input
+  //                        << " Discarding grant from input " << input
   //                        << "." << (vc % _input_speedup)
   //                        << " to output " << output
   //                        << "." << (expanded_output % _output_speedup)
@@ -3940,7 +3940,7 @@ void IQRouter::_SWAllocEvaluateMulti()
   //           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
   //           {
   //             *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-  //                        << "Discarding grant from input " << input
+  //                        << " Discarding grant from input " << input
   //                        << "." << (vc % _input_speedup)
   //                        << " to output " << output
   //                        << "." << (expanded_output % _output_speedup)
@@ -3953,7 +3953,7 @@ void IQRouter::_SWAllocEvaluateMulti()
   //           if (f->watch || (_routers_to_watch.count(GetID()) > 0))
   //           {
   //             *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-  //                        << "Discarding grant from input " << input
+  //                        << " Discarding grant from input " << input
   //                        << "." << (vc % _input_speedup)
   //                        << " to output " << output
   //                        << "." << (expanded_output % _output_speedup)
@@ -4029,7 +4029,7 @@ void IQRouter::_SWAllocUpdateMulti()
         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         {
             *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                << "mcast Completed switch allocation for VC " << vc
+                << " mcast Completed switch allocation for VC " << vc
                 << " at input " << input
                 << " (front fid: " << f->id << " pid =" << f->pid << " mflag =" << f->mflag
                 << ")." << endl;
@@ -4080,7 +4080,7 @@ void IQRouter::_SWAllocUpdateMulti()
                 // cout<<"source router "<<f_dup->src<<" original id "<<f->id<<" f_dup id "<<f_dup->id<<" output "<<output<<" rid "<<GetID()<<endl;
                 if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0)) {
                     *gWatchOut << GetSimTime() << " | "
-                        << "Egress original flit " << f_dup->id
+                        << " Egress original flit " << f_dup->id
                         << " (packet " << f_dup->pid << " mflag = " << f_dup->mflag
                         << ") at output port" << output
                         << "." << endl;
@@ -4092,8 +4092,8 @@ void IQRouter::_SWAllocUpdateMulti()
                 // cout<<"source router "<<f_dup->src<<" original id "<<f->id<<" f_dup id "<<f_dup->id<<" output "<<output<<" rid "<<GetID()<<endl;
                 if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0)) {
                     *gWatchOut << GetSimTime() << " | "
-                        << "Egress Duplicate flit " << f_dup->id
-                        << " (packet " << f_dup->pid << f_dup->pid << " mflag = " << f_dup->mflag
+                        << " Egress Duplicate flit " << f_dup->id
+                        << " (packet " << f_dup->pid << " mflag = " << f_dup->mflag
                         << ") at output port" << output
                         << "." << endl;
                 }
@@ -4108,7 +4108,7 @@ void IQRouter::_SWAllocUpdateMulti()
             {
 
 
-                *gWatchOut << "dup_Pid " << f_dup->pid << " Destinations are: ";
+                *gWatchOut << " Dup_Pid " << f_dup->pid << " Destinations are: ";
                 for (int i = 0; i < f_dup->mdest.first.size(); i++) {
                     *gWatchOut << f_dup->mdest.first[i] << " " << endl;
                 }
@@ -4202,7 +4202,7 @@ void IQRouter::_SWAllocUpdateMulti()
             dest_buf->SendingFlit(f_dup);
             // if(GetID() == 10 && f_dup->id == 29049)
             // {
-            //   cout<<"blech"<<endl;
+            //   cout<<" blech"<<endl;
             // }
             _crossbar_flits.push_back(make_pair(-1, make_pair(f_dup, make_pair(expanded_input, expanded_output))));
 
@@ -4220,7 +4220,7 @@ void IQRouter::_SWAllocUpdateMulti()
                 assert(mcount == cur_buf->GetMcastTable(vc).size());
                 if (f_dup->tail)
                 {
-                    // cout<<"comes here right"<<endl;
+                    // cout<<" comes here right"<<endl;
                     if (mcount == cur_buf->GetMcastTable(vc).size())
                     {
                         cur_buf->SetState(vc, VC::idle);
@@ -4230,8 +4230,8 @@ void IQRouter::_SWAllocUpdateMulti()
                     cur_buf->EraseOutpair(vc);
                     if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                     {
-                        *gWatchOut << "mcast all output is acquired pid=" << f_dup->pid << " fid= " <<
-                            f_dup->id << "turn to idle ="
+                        *gWatchOut << " mcast all output of pid= " << f_dup->pid << " is acquired, fid= " <<
+                            f_dup->id << " turn to idle = "
                             << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                     }
                 }
@@ -4259,8 +4259,8 @@ void IQRouter::_SWAllocUpdateMulti()
                             cur_buf->SetMCastCount(vc, 0);
                             if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                             {
-                                *gWatchOut << "mcast all output is acquired pid=" << f_dup->pid << " fid= " <<
-                                    f_dup->id << "turn to routing for pid =" << nf->pid << " fid = " << nf->id
+                                *gWatchOut << " mcast all output is acquired pid= " << f_dup->pid << " fid= " <<
+                                    f_dup->id << " turn to routing for pid = " << nf->pid << " fid = " << nf->id
                                     << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                             }
                         }
@@ -4271,7 +4271,7 @@ void IQRouter::_SWAllocUpdateMulti()
                             -1)));*/
                         if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                         {
-                            *gWatchOut << "mcast partial output is not acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                            *gWatchOut << " mcast partial output of pid= " << f_dup->pid << " is not acquired, fid= " << f_dup->id << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                         }
                     }
 
@@ -4281,7 +4281,7 @@ void IQRouter::_SWAllocUpdateMulti()
                     if (mcount == cur_buf->GetMcastTable(vc).size()) {
                         
                         vector<int> outputandvc = cur_buf->GetMulticastOutpair(vc);
-                        // cout<<"My size "<<outputandvc.size()<<endl;
+                        // cout<<" my size "<<outputandvc.size()<<endl;
                         for (int i = 0; i < outputandvc.size(); i++)
                         {
                             _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first.first, outputandvc[i]), -1)));
@@ -4289,7 +4289,7 @@ void IQRouter::_SWAllocUpdateMulti()
                         cur_buf->SetMCastCount(vc, 0);
                         if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                         {
-                            *gWatchOut << "mcast all output is acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                            *gWatchOut << " mcast all output is acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                         }
                     }
                     else if (mcount < cur_buf->GetMcastTable(vc).size()) {
@@ -4298,7 +4298,7 @@ void IQRouter::_SWAllocUpdateMulti()
                             -1)));*/
                         if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                         {
-                            *gWatchOut << "mcast partial output is not acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                            *gWatchOut << " mcast partial output is not acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                         }
                     }
 
@@ -4367,7 +4367,7 @@ void IQRouter::_SWAllocUpdateMulti()
                 // cout<<"Im pushing here "<<f->id<<endl;
                 cur_buf->SetMCastCount(vc, 0);
                 vector<int> outputandvc = cur_buf->GetMulticastOutpair(vc);
-                // cout<<"My size "<<outputandvc.size()<<endl;
+                // cout<<" my size "<<outputandvc.size()<<endl;
                 for (int i = 0; i < outputandvc.size(); i++)
                 {
                     _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first.first, outputandvc[i]), -1)));
@@ -4443,7 +4443,7 @@ void IQRouter::_SWAllocUpdateMulti()
         _sw_alloc_vcs_multi.pop_front();
         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         {
-            *gWatchOut << "after pop front Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+            *gWatchOut << " after pop front Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
         }
     }
 }
@@ -4561,7 +4561,7 @@ void IQRouter::_SwitchEvaluate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Beginning crossbar traversal for flit " << f->id
+                 << " beginning crossbar traversal for flit " << f->id
                  << " from input " << (expanded_input / _input_speedup)
                  << "." << (expanded_input % _input_speedup)
                  << " to output " << (expanded_output / _output_speedup)
@@ -4598,7 +4598,7 @@ void IQRouter::_SwitchUpdate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Completed crossbar traversal for flit " << f->id
+                 << " completed crossbar traversal for flit " << f->id
                  << " from input " << input
                  << "." << (expanded_input % _input_speedup)
                  << " to output " << output
@@ -4610,7 +4610,7 @@ void IQRouter::_SwitchUpdate()
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Buffering flit " << f->id
+                 << " buffering flit " << f->id
                  << " at output " << output
                  << "." << endl;
     }
@@ -4664,7 +4664,7 @@ void IQRouter::_SendFlits()
 #endif
       if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                   << "Sending flit " << f->id
+                   << " Sending flit " << f->id
                    << " to channel at output " << output
                    << "." << endl;
       if (gTrace)
@@ -4806,7 +4806,7 @@ void IQRouter::_UpdateNOQ(int input, int vc, Flit const *f)
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                 << "Computing lookahead routing information for flit " << f->id
+                 << " computing lookahead routing information for flit " << f->id
                  << " (NOQ)." << endl;
     }
   }

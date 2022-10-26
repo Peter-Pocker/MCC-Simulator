@@ -388,9 +388,9 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _hub[i] = _net[i]->GetHubs();
     }
     json j;
-    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_3x3_batch8\\IR.json") >> j;
-    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\goog_3x3_batch4\\IR.json") >> j;
-    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_3x3_batch2\\IR.json") >> j;
+    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_3x3_batch8\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\goog_3x3_batchF\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_3x3_batch2\\IR.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_2c2w2d_1.json") >> j;
     
     for (auto& p : config.GetIntArray("Core_routers")) {
@@ -489,7 +489,7 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
 
     _print_csv_results = config.GetInt("print_csv_results");
     _deadlock_warn_timeout = config.GetInt("deadlock_warn_timeout");
-
+    _watch_deadlock = config.GetInt("watch_deadlock") == 1 ? true : false;
     string watch_file = config.GetStr("watch_file");
     if ((watch_file != "") && (watch_file != "-"))
     {
@@ -1538,20 +1538,32 @@ void TrafficManager::_Step()
     {
         _deadlock_timer = 0;
         cout << "WARNING: Possible network deadlock.\n";
-        for (auto& x : _total_in_flight_flits[0]) {
-            *gWatchOut << "flit_id = "<< x.second->id
-                << "packet_id = " << x.second->pid
-                << " mflag  = "<< x.second->mflag
-                << ", src = " << x.second->src
-                << ", dest = " << x.second->dest
-                << ", nn_type =" << x.second->nn_type
-                << ", transfer_id = " << x.second->transfer_id
-                << ", from_ddr =" << x.second->from_ddr
-                << ", size =" << x.second->size
-                << " layer_name =" << x.second->layer_name<<"\n";
+        if (_watch_deadlock) {
+            for (auto& x : _total_in_flight_flits[0]) {
+                if (x.second->head || x.second->tail) {
+                    *gWatchOut << " flit_id = " << x.second->id
+                        << " packet_id = " << x.second->pid
+                        << " head = " << x.second->head
+                        << " tail = " << x.second->tail
+                        << " mflag  = " << x.second->mflag
+                        << ", src = " << x.second->src
+                        << ", dest = " << x.second->dest
+                        << ", nn_type =" << x.second->nn_type
+                        << ", transfer_id = " << x.second->transfer_id
+                        << ", from_ddr =" << x.second->from_ddr
+                        << ", size =" << x.second->size
+                        << " layer_name =" << x.second->layer_name << "\n"
+                        << " num dests " << x.second->mdest.first.size() << " simtime " << GetSimTime()
+                        << " multi Destinations are: ";
+                    for (int i = 0; i < x.second->mdest.first.size(); i++) {
+                        *gWatchOut << x.second->mdest.first[i] << " ";
+                    }
+                    *gWatchOut << "\n";
+                }
+            }
+            *gWatchOut << "****************************************" << "\n";
+            *gWatchOut << "" << "\n";
         }
-        *gWatchOut << "****************************************" << "\n";
-        *gWatchOut << "" << "\n";
     }
 
     vector<map<int, Flit *> > flits(_subnets);
