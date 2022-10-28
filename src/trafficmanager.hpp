@@ -259,6 +259,7 @@ protected:
   set<int> _packets_to_watch;
   set<int> _routers_to_watch;
   set<int> _transfers_to_watch;
+  set<int> _cores_to_watch;
   bool _watch_deadlock;
 
   bool _print_csv_results;
@@ -327,6 +328,7 @@ public:
   int _mcast_switch;
   int _num_mcast_dests;
   int rand_dest;
+  bool flush;
   vector<int> _GetMcastDests(int source);
 
   static TrafficManager * New(Configuration const & config, 

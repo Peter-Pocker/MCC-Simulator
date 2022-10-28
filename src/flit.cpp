@@ -74,6 +74,7 @@ void Flit::Reset()
   oid       = -1 ; // old fid
   hops      = 0 ;
   flits_num = 0;
+  cur_router = -1;
   watch     = false ;
   record    = false ;
   // for DNN

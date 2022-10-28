@@ -490,7 +490,7 @@ void IQRouter::_InputQueuing()
     assert((vc >= 0) && (vc < _vcs));
 
     Buffer *const cur_buf = _buf[input];
-
+    f->cur_router = GetID();
     if (f->watch || (_routers_to_watch.count(GetID()) > 0))
     {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID()   
@@ -879,9 +879,10 @@ void IQRouter::_VCAllocEvaluate()
                        << " is in use by VC " << use_vc
                        << " at input " << use_input;
             Flit *cf = _buf[use_input]->FrontFlit(use_vc);
+            *gWatchOut << " state is " << _buf[use_input]->GetState(use_vc);
             if (cf)
             {
-              *gWatchOut << " (front flit: " << cf->id << ")";
+                *gWatchOut << " (front flit: " << cf->id << " mcast = " << cf->mflag << " head = " << cf->head << " tail = " << cf->tail << ")";
             }
             else
             {
@@ -2900,9 +2901,10 @@ void IQRouter::_VCAllocEvaluateMulti()
                       << " is in use by VC " << use_vc
                       << " at input " << use_input;
           Flit *cf = _buf[use_input]->FrontFlit(use_vc);
+          *gWatchOut << " state is " << _buf[use_input]->GetState(use_vc);
           if (cf)
           {
-            *gWatchOut << " (front flit: " << cf->id << ")";
+            *gWatchOut << " (front flit: " << cf->id <<" mcast = " <<cf->mflag<< " head = " << cf->head << " tail = " << cf->tail << ")";
           }
           else
           {
@@ -3145,7 +3147,7 @@ void IQRouter::_VCAllocEvaluateMulti()
 void IQRouter::_VCAllocUpdateMulti()
 {
   assert(_vc_allocator);
-
+  set<int> finish_invc;
   while (!_vc_alloc_vcs_multi.empty())
   {
 
@@ -3207,15 +3209,22 @@ void IQRouter::_VCAllocUpdateMulti()
       BufferState *const dest_buf = _next_buf[match_output];
       if(cur_buf->GetMulticastOutpair(vc).size() == cur_buf->GetMcastTable(vc).size())
       {
-        cur_buf->SetState(vc, VC::active);
-      }
+            cur_buf->SetState(vc, VC::active);
+            if(finish_invc.count(item.second.first.first * _vcs + item.second.first.second)==0)
+            for (int i = 0; i < cur_buf->GetMulticastOutpair(vc).size(); i++) {
+                _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first, cur_buf->GetMulticastOutpair(vc)[i]), -1)));
+                if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+                {
+                    *gWatchOut << " push into switch alloc vc_alloc " << f->id << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                }
+            }
+            finish_invc.insert(item.second.first.first * _vcs + item.second.first.second);
+        }
+      
       if (!_speculative)
-      {_sw_alloc_vcs_multi
-        .push_back(make_pair(-1, make_pair(make_pair(item.second.first,output_and_vc), -1)));
-      if (f->watch || (_routers_to_watch.count(GetID()) > 0))
       {
-          *gWatchOut << "push into switch alloc vc_alloc"<<f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
-      }
+//          _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first,output_and_vc), -1)));
+      
         // cout<<"pushin into switch alloc vcalloc"<<f->id<<endl;
       }
     }
@@ -4271,7 +4280,8 @@ void IQRouter::_SWAllocUpdateMulti()
                             -1)));*/
                         if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                         {
-                            *gWatchOut << " mcast partial output of pid= " << f_dup->pid << " is not acquired, fid= " << f_dup->id << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                            *gWatchOut << " mcast "<< cur_buf->GetMcastTable(vc).size() - mcount <<" output of pid = " << f_dup->pid << " is not acquired, fid = " 
+                                << f_dup->id << " packet_size = "<<f_dup->flits_num << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                         }
                     }
 
@@ -4289,7 +4299,8 @@ void IQRouter::_SWAllocUpdateMulti()
                         cur_buf->SetMCastCount(vc, 0);
                         if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                         {
-                            *gWatchOut << " mcast all output is acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                            *gWatchOut << " mcast all output is acquired pid=" << f_dup->pid << " fid= " << f_dup->id
+                                << " packet_size = " << f_dup->flits_num << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                         }
                     }
                     else if (mcount < cur_buf->GetMcastTable(vc).size()) {
@@ -4298,7 +4309,8 @@ void IQRouter::_SWAllocUpdateMulti()
                             -1)));*/
                         if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0))
                         {
-                            *gWatchOut << " mcast partial output is not acquired pid=" << f_dup->pid << " fid= " << f_dup->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+                            *gWatchOut << " mcast " << cur_buf->GetMcastTable(vc).size() - mcount << " output of pid = " << f_dup->pid << " is not acquired, fid = "
+                                << f_dup->id << " packet_size = " << f_dup->flits_num << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                         }
                     }
 
@@ -4437,7 +4449,7 @@ void IQRouter::_SWAllocUpdateMulti()
         _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first, -1)));
         if (f->watch || (_routers_to_watch.count(GetID()) > 0))
         {
-            *gWatchOut << "push into switch alloc sw_alloc_update if output not got" << f->id << "Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
+            *gWatchOut << " push into switch alloc sw_alloc_update if output not got" << f->id << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
         }
 }
         _sw_alloc_vcs_multi.pop_front();
@@ -4481,6 +4493,7 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
   f_dup->src    = cf->src;
   f_dup->itime = GetSimTime();
   f_dup->ctime  = GetSimTime();
+  f_dup->cur_router = GetID();
   f_dup->oid = cf->oid;
   f_dup->record = cf->record;
   f_dup->cl     = cf->cl;
@@ -4492,7 +4505,7 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
   f_dup->to_ddr = cf->to_ddr;
   f_dup->layer_name = cf->layer_name;
   f_dup->size = cf->size;
-
+  f_dup->flits_num = cf->flits_num;
     _total_in_flight_flits[f_dup->cl].insert(make_pair(f_dup->id, f_dup));
   if(cf->record) {
         _measured_in_flight_flits[f_dup->cl].insert(make_pair(f_dup->id, f_dup));
@@ -4519,9 +4532,9 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
   if (f_dup->watch || (_routers_to_watch.count(GetID()) > 0)) {
       *gWatchOut << GetSimTime() << " | "
           << FullName() << " | " << " rid = " <<GetID() 
-          << "Enqueuing Duplicate flit " << f_dup->id
+          << " Enqueuing Duplicate flit " << f_dup->id
           << " (packet " << f_dup->pid
-          << ") created by original packet " << cf->pid <<" and fid = "<<cf->id<< " at time " << cf->ctime
+          << ") created by original packet " << cf->pid <<" head = "<<f_dup->head<< " tail = " << f_dup->tail << " and fid = "<<cf->id<< " at time " << cf->ctime
           <<" record = "<< f_dup->record
           << " source is " << f_dup->src
           << "." << endl;

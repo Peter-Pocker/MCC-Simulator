@@ -53,7 +53,7 @@ void _send_data(list<Flit*>& _flits_sending);
 vector<int> &_check_end();
 //Flit* send_requirement();
 void receive_message(Flit*f);
-Core(const Configuration& config, int id, const nlohmann::json& j);
+Core(const Configuration& config, int id,vector<int>ddr_id, const nlohmann::json& j);
 ~Core() {};
 private:
 

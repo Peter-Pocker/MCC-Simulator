@@ -73,17 +73,18 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     _wl_end_time = 0;
     _nodes = _net[0]->NumNodes();
     _routers = _net[0]->NumRouters();
-    _cores = config.GetIntArray("Core_routers").size();
-    _core.resize(_nodes);
     
-    _ddrs = config.GetInt("DDR_num");
-    _ddr.resize(_ddrs);
+    //_cores = config.GetIntArray("Core_routers").size();
+    //_core.resize(_nodes);
+    
+    //_ddrs = config.GetInt("DDR_num");
+    //_ddr.resize(_ddrs);
     //Bransan add _nhubs
     _nhubs = _net[0]->NumHubs();
-
+    flush = false;
     _vcs = config.GetInt("num_vcs");
     _subnets = config.GetInt("subnets");
-    ddr_routers = config.GetIntArray("DDR_routers");
+    //ddr_routers = config.GetIntArray("DDR_routers");
     _mcast_switch = config.GetInt("mcast_switch");
     int mcast_percent = config.GetInt("mcast_percent");
     _num_mcast_dests = config.GetInt("num_mcast_dests");
@@ -388,15 +389,58 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _hub[i] = _net[i]->GetHubs();
     }
     json j;
-    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_3x3_batch8\\IR.json") >> j;
-    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\goog_3x3_batchF\\IR.json") >> j;
-    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_3x3_batch2\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_3x3_batch8\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\goog_8x8_batch16\\IR.json") >> j;
+    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\goog_3x3_batch8\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_8x8_batch16\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_6x6_batch16\\IR.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_2c2w2d_1.json") >> j;
-    
-    for (auto& p : config.GetIntArray("Core_routers")) {
-        core_id.insert(p);
+    int x_temp = config.GetInt("Core_x");
+    int y_temp = config.GetInt("Core_y");
+    _cores = x_temp * y_temp;
+    _ddrs = config.GetInt("DDR_num");
+    _core.resize(_nodes);
+    _ddr.resize(_ddrs);
+    ddr_routers.resize(y_temp * 2);
+    for (int i = 0; i < _nodes; i++) {
+        _core[i] = NULL;
     }
+    for (int i = 0; i < y_temp; i++) {
 
+        ddr_routers[i] = i * (x_temp + 2);
+        ddr_routers[i + y_temp] = i * (x_temp + 2) + x_temp + 1;
+
+    }
+    for (int i = 0; i < y_temp; i++) {
+        for (int k = 0; k < x_temp + 2; k++) {
+            if (k != 0 && k != x_temp + 1) {
+                Core* temp = new Core(config, i * (x_temp+2) + k,ddr_routers, j);
+                _core[i * (x_temp + 2) + k] = temp;
+                core_id.insert(i * (x_temp + 2) + k);
+//                cout << i * (x_temp + 2) + k << "\n";
+            }  
+        }
+    }
+   
+
+
+    /*
+if (k == 0) {
+                if (i < y_temp / 2)
+                    ddr_routers[i] = i * x_temp;
+                else if (i >= y_temp / 2)
+                    ddr_routers[i + y_temp / 2] = i * x_temp+x_temp-1;
+            }
+            else if (k == x_temp + 1) {
+                if (i < y_temp / 2)
+                    ddr_routers[i+ y_temp] = i * x_temp;
+                else if (i >= y_temp / 2)
+                    ddr_routers[i + y_temp*3/2] = i * x_temp + x_temp - 1;
+            }*/
+    //for (auto& p : config.GetIntArray("Core_routers")) {
+      //  core_id.insert(p);
+    //}
+    /*
     for (int i = 0; i < _nodes; i++) {
         if (core_id.count(i) > 0) {
             Core* temp = new Core(config, i, j);
@@ -407,13 +451,13 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
             _core[i] = NULL;
         }
     }
-
+*/
     for (int i = 0; i < _ddrs; i++) {
         DDR* temp = new DDR(config, i, j);
         _ddr[i] = temp;
         
     }
-    
+   
     int temp_r = ddr_routers.size() / _ddrs;
     assert(ddr_routers.size() % _ddrs==0);
     int temp_p =0;
@@ -1408,7 +1452,7 @@ void TrafficManager::_Inject()
                       _core[i]->run(_time, _partial_packets[i][c].empty(),flits);
                  }
                  else if (ddr_id.count(i) > 0) {
-                      _ddr[ddr_id[i]]->run(_time, _partial_packets[i][c].empty(), flits);
+                      _ddr[ddr_id[i]]->run(_time, _partial_packets[i][c].empty() , flits);
                  }
 
  //               int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;
@@ -1419,6 +1463,7 @@ void TrafficManager::_Inject()
                     int mflag_temp=false;
                     for (auto& f : flits) {
                         f->id = _cur_id++;
+                        f->cur_router = i;
 //                        cout << f->id << "\n";
                         if (f->head) {
                             total_count++;
@@ -1536,8 +1581,9 @@ void TrafficManager::_Step()
     }
     if (flits_in_flight && (_deadlock_timer++ >= (_deadlock_warn_timeout)))
     {
+//        flush = true;
         _deadlock_timer = 0;
-        cout << "WARNING: Possible network deadlock.\n";
+        cout << "WARNING: Possible network deadlock."<<" remaining flits = "<< _total_in_flight_flits[0].size()<<"\n";
         if (_watch_deadlock) {
             for (auto& x : _total_in_flight_flits[0]) {
                 if (x.second->head || x.second->tail) {
@@ -1548,6 +1594,7 @@ void TrafficManager::_Step()
                         << " mflag  = " << x.second->mflag
                         << ", src = " << x.second->src
                         << ", dest = " << x.second->dest
+                        << ", cur_router = " << x.second->cur_router
                         << ", nn_type =" << x.second->nn_type
                         << ", transfer_id = " << x.second->transfer_id
                         << ", from_ddr =" << x.second->from_ddr
@@ -1559,13 +1606,16 @@ void TrafficManager::_Step()
                         *gWatchOut << x.second->mdest.first[i] << " ";
                     }
                     *gWatchOut << "\n";
+                    *gWatchOut << "\n";
                 }
             }
             *gWatchOut << "****************************************" << "\n";
             *gWatchOut << "" << "\n";
         }
     }
-
+    //if (flush == true && _total_in_flight_flits[0].empty()) {
+    //    cout << "deadlock over";
+    //}
     vector<map<int, Flit *> > flits(_subnets);
 
     for (int subnet = 0; subnet < _subnets; ++subnet)

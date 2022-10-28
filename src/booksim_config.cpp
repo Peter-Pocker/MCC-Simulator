@@ -81,13 +81,15 @@ BookSimConfig::BookSimConfig( )
   _int_map["DDR_fq"] = 16; //frequency / gbps
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 2;
-  _int_map["Core_num"] = 9;
-  AddStrField("Core_routers", "{1,2,3,6,7,8,11,12,13}");//these location has cores, some routers can be idle
+  _int_map["Core_num"] = 64;
+  _int_map["Core_x"] = 3;
+  _int_map["Core_y"] = 3;
+  //AddStrField("Core_routers", "{1,2,3,6,7,8,11,12,13}");//these location has cores, some routers can be idle
   //AddStrField("Core_routers", "{1,4}");
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
   
   //after the DDR receives its requirement, it can send data. 
-  AddStrField("DDR_routers", "{0, 5, 10, 4, 9, 14}");//grouped by ddr numbers. 
+  //AddStrField("DDR_routers", "{0, 5, 10, 4, 9, 14}");//grouped by ddr numbers. 
   //AddStrField("DDR_routers", "{0,3,2,5}");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
   //AddStrField("DDR_4", "62");
@@ -95,8 +97,8 @@ BookSimConfig::BookSimConfig( )
   //todo DDR number,router for each DDR, DDR group(add this,number & ddr for this group)
 
   //Core configuration
-  _int_map["num_obuf"] = 3;
-  _int_map["flit_width"] = 1024;
+  _int_map["num_obuf"] = 6;
+  _int_map["flit_width"] = 128;
   _int_map["sending_granularity"] = 10;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 2;
 
@@ -160,7 +162,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["spec_mask_by_reqs"] = 0 ;
   AddStrField("spec_sw_allocator", "prio");
   
-  _int_map["received_queue_size"]  = 32; //Recieved queue size  
+  _int_map["received_queue_size"]  = 16; //Recieved queue size  
   _int_map["num_vcs"]         = 8;  
   _int_map["vc_buf_size"]     = 16;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
@@ -349,14 +351,15 @@ BookSimConfig::BookSimConfig( )
   _int_map["deadlock_warn_timeout"] = 10000;
 
   _int_map["viewer_trace"] = 0;
-  _int_map["watch_deadlock"] = 0;
+  _int_map["watch_deadlock"] = 1;
+  _int_map["watch_all_cores"] = 0;
   AddStrField("watch_file", "test");
   
-  AddStrField("watch_packets", "");
-  AddStrField("watch_flits", "394239");
+  AddStrField("watch_packets", "1346");
+  AddStrField("watch_flits", "");
   AddStrField("watch_transfer_id", "");
   AddStrField("watch_routers", "");
-  AddStrField("watch_cores", "{13}");//1,2,3,6,7,8,11,12,
+  AddStrField("watch_cores", "{1}");//1,2,3,6,7,8,11,12,
   AddStrField("watch_ddrs", "");
   AddStrField("watch_transactions", "");
 

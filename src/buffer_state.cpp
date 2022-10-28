@@ -108,7 +108,7 @@ BufferState::PrivateBufferPolicy::PrivateBufferPolicy(Configuration const & conf
      _vc_buf_size = buf_size/vcs;
     if(_vc_buf_size <= 0) {
       _vc_buf_size = config.GetInt( "vc_buf_size" );
-    };   //Why ;?
+    };  
   }
   assert(_vc_buf_size > 0);
 }

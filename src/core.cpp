@@ -55,19 +55,27 @@ todo:
 #include "core.hpp"
 
 
-Core::Core(const Configuration& config, int id, const nlohmann::json &j)
+Core::Core(const Configuration& config, int id, vector<int> ddr_id, const nlohmann::json& j)
 {  
    _num_obuf = config.GetInt("num_obuf");
    _num_flits= config.GetInt("packet_size")-1;//data flits
    _flit_width = config.GetInt("flit_width");
    _interleave = config.GetInt("interleave")==1 ? true : false;
    _ddr_num = config.GetInt("DDR_num");
-   _ddr_id = config.GetIntArray("DDR_routers");
+   _ddr_id = ddr_id;
    _sd_gran = config.GetInt("sending_granularity");//How many times did it take to send the data to destination
    _sd_gran_lb= config.GetInt("sending_granularity_lowerbound");
     vector<int> temp = config.GetIntArray("watch_cores");
-	for (auto x : temp) {
-		_watch_cores.insert(x);
+	if (config.GetInt("watch_all_cores")) {
+		for (int i = 0; i < config.GetInt("k") * config.GetInt("k"); i++) {
+			_watch_cores.insert(i);
+		}
+
+	}
+	else {
+		for (auto x : temp) {
+			_watch_cores.insert(x);
+		}
 	}
 	vector<int> temp1 = config.GetIntArray("watch_transfer_id");
 	for (auto x : temp1) {
@@ -230,6 +238,9 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 		_end_tile_time = _start_tile_time + _tile_time.front(); //neglect non-integer part
 	}
 	if (_running && !_wl_end) {
+		if (_cur_sd_obuf == -1) {
+			_generate_next_sd_obuf_id();
+		}
 		if (_time == _end_tile_time) {
 			if (_watch_cores.count(stoi(_core_id)) > 0) {
 				int here = 1;
@@ -248,7 +259,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 				_wl_fn = true;
 				cnt1 = 0;
 				if (_watch_cores.count(stoi(_core_id))>0 ){
-					cout << "this core is = " << _core_id << " cur_id " << _cur_id << " is finished at " <<_time << " left_workload = "<<_wl_num-1-_cur_id<<"\n";
+					cout << "this core is = " << _core_id << " cur_id " << _cur_id << " cur_workload_id = "<<_cur_wl_id<< " is finished at " <<_time << " left_workload = "<<_wl_num-1-_cur_id<<"\n";
 				}
 			} else if (_cur_rc_obuf == -1 ) {
 				pending = true;
@@ -346,7 +357,7 @@ void Core::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
 	if (f->nn_type == 5 ) {
 		if ((_watch_cores.count(stoi(_core_id)) > 0 || _watch_ids.count(f->transfer_id)>0)) {
-			cout << "this core is = " << _core_id << " receive requirement transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
+			cout << "this core is = " << _core_id << " receive requirement transfer_id " << f->transfer_id << " cur_workload_id = " << _cur_wl_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
 		}
 		if (_cur_wl_rq.count(f->transfer_id) == 0) {
 			_r_rq_list[f->transfer_id].insert(f->src);
@@ -371,7 +382,7 @@ void Core::receive_message(Flit*f) {
 		if (f->end) {
 
 			if (_watch_cores.count(stoi(_core_id)) > 0 || _watch_ids.count(f->transfer_id) > 0) {
-				cout << "this core is = " << _core_id << " receive end transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
+				cout << "this core is = " << _core_id << " receive end transfer_id " << f->transfer_id << " cur_workload_id = " << _cur_wl_id <<  " src= " << f->src << " inject time = " << f->ctime << "\n";
 				if (f->transfer_id==37) {
 					int here = 1;
 				}
@@ -736,7 +747,7 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 			id_ddr_rel.erase(transfer_id);
 			/**/
 			if (_watch_cores.count(stoi(_core_id)) > 0 || _watch_ids.count(transfer_id) > 0) {
-				cout << "this core is = " << _core_id << " send end transfer_id " << transfer_id << " mflag " << mflas_temp << " inject time = " << _time << "\n";
+				cout << "this core is = " << _core_id << " send end transfer_id " << transfer_id << " mflag " << mflas_temp << " cur_workload_id = " << _cur_wl_id <<" inject time = " << _time << "\n";
 			}
 			
 		}

@@ -60,8 +60,16 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
 	assert(_ddr_id >= 0 && _ddr_id <= _ddr_num);
 	vector<int> temp = config.GetIntArray("watch_cores");
-	for (auto x : temp) {
-		_watch_cores.insert(x);
+	if (config.GetInt("watch_all_cores")) {
+		for (int i = 0; i < config.GetInt("k") * config.GetInt("k"); i++) {
+			_watch_cores.insert(i);
+		}
+
+	}
+	else {
+		for (auto x : temp) {
+			_watch_cores.insert(x);
+		}
 	}
 	vector<int> temp1 = config.GetIntArray("watch_transfer_id");
 	for (auto x : temp1) {
@@ -195,6 +203,7 @@ void DDR::_send_data(list<Flit*>& _flits_sending) {
 		f->mflag = mflag_tmp;
 		f->end = _packet_to_send.front().first.first;
 		f->from_ddr = true;
+		f->flits_num = flits + 1;
 		if (f->head) {
 			if (_packet_to_send.front().second.size() > 1) {
 				f->mflag = true;

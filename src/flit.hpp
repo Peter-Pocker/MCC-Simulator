@@ -68,6 +68,7 @@ public:
   int  itime;//inject time
   int  atime;//arrival time
 
+  int cur_router;
   int  id;
   int  pid;
   int  oid; //Bransan added to calculate transaction time for multicast
