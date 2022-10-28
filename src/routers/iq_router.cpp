@@ -2773,10 +2773,10 @@ void IQRouter::_RouteUpdateMulti()
     {
       // push multiple entries here for each outut port
       map<int, pair<vector<int>, vector<int> > > mcast_table = cur_buf->GetMcastTable(vc);
-      for(map<int, pair<vector<int>, vector<int> > >::iterator itr = mcast_table.begin();itr != mcast_table.end(); itr++)
-      {
-        _vc_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second, make_pair(itr->first,-1))));
-      }
+      //for(map<int, pair<vector<int>, vector<int> > >::iterator itr = mcast_table.begin();itr != mcast_table.end(); itr++)
+      //{
+        _vc_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second, make_pair(false,-1))));
+      //}
     }
     // NOTE: No need to handle NOQ here, as it requires lookahead routing!
     _route_vcs_multi.pop_front();
@@ -2794,7 +2794,7 @@ void IQRouter::_VCAllocEvaluateMulti()
   bool watched = false;
   vector<int> multioutputandvc;
 
-  for (deque<pair<int, pair<pair<int, int>, pair<int,int> > > >::iterator iter = _vc_alloc_vcs_multi.begin();
+  for (deque<pair<int, pair<pair<int, int>, pair<bool,int> > > >::iterator iter = _vc_alloc_vcs_multi.begin();
        iter != _vc_alloc_vcs_multi.end();
        ++iter)
   {
@@ -2848,121 +2848,145 @@ void IQRouter::_VCAllocEvaluateMulti()
     //      ++iset)
     // {
 
-    int const out_port = iter->second.second.first;
+    //int const out_port_number = iter->second.second.first;
     assert((out_port >= 0) && (out_port < _outputs));
+    int vc_acquired =0;
+    map<int,int> empty_vc;
+    for (auto& x : cur_buf->GetMcastTable(vc)) {
+        BufferState const* const dest_buf = _next_buf[x.first];
 
-    BufferState const *const dest_buf = _next_buf[out_port];
+        int vc_start;
+        int vc_end;
 
-    int vc_start;
-    int vc_end;
+        // if (_noq && _noq_next_output_port[input][vc] >= 0)
+        // {
+        //   assert(!_routing_delay);
+        //   vc_start = _noq_next_vc_start[input][vc];
+        //   vc_end = _noq_next_vc_end[input][vc];
+        // }
+        // else
+        // {
+        vc_start = 0;
+        vc_end = _vcs - 1;
+        // }
+        assert(vc_start >= 0 && vc_start < _vcs);
+        assert(vc_end >= 0 && vc_end < _vcs);
+        assert(vc_end >= vc_start);
 
-    // if (_noq && _noq_next_output_port[input][vc] >= 0)
-    // {
-    //   assert(!_routing_delay);
-    //   vc_start = _noq_next_vc_start[input][vc];
-    //   vc_end = _noq_next_vc_end[input][vc];
-    // }
-    // else
-    // {
-    vc_start = 0;
-    vc_end = _vcs - 1;
-    // }
-    assert(vc_start >= 0 && vc_start < _vcs);
-    assert(vc_end >= 0 && vc_end < _vcs);
-    assert(vc_end >= vc_start);
-
-    for (int out_vc = vc_start; out_vc <= vc_end; ++out_vc)
-    {
-      assert((out_vc >= 0) && (out_vc < _vcs));
-
-      int in_priority = 0;
-      // if (_vc_prioritize_empty && !dest_buf->IsEmptyFor(out_vc))
-      // {
-      //   assert(in_priority >= 0);
-      //   in_priority += numeric_limits<int>::min();
-      // }
-
-      // On the input input side, a VC might request several output VCs.
-      // These VCs can be prioritized by the routing function, and this is
-      // reflected in "in_priority". On the output side, if multiple VCs are
-      // requesting the same output VC, the priority of VCs is based on the
-      // actual packet priorities, which is reflected in "out_priority".
-
-      if (!dest_buf->IsAvailableFor(out_vc))
-      {
-        if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+        for (int out_vc = vc_start; out_vc <= vc_end; ++out_vc)
         {
-          int const use_input_and_vc = dest_buf->UsedBy(out_vc);
-          int const use_input = use_input_and_vc / _vcs;
-          int const use_vc = use_input_and_vc % _vcs;
-          *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                      << " mcast VC " << out_vc
-                      << " at output " << out_port
-                      << " is in use by VC " << use_vc
-                      << " at input " << use_input;
-          Flit *cf = _buf[use_input]->FrontFlit(use_vc);
-          *gWatchOut << " state is " << _buf[use_input]->GetState(use_vc);
-          if (cf)
-          {
-            *gWatchOut << " (front flit: " << cf->id <<" mcast = " <<cf->mflag<< " head = " << cf->head << " tail = " << cf->tail << ")";
-          }
-          else
-          {
-            *gWatchOut << " (empty)";
-          }
-          *gWatchOut << "." << endl;
-        }
-      }
-      else
-      {
-        elig = true;
-        if (_vc_busy_when_full && dest_buf->IsFullFor(out_vc))
-        {
-          if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-            *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
+            assert((out_vc >= 0) && (out_vc < _vcs));
+
+            int in_priority = 0;
+            // if (_vc_prioritize_empty && !dest_buf->IsEmptyFor(out_vc))
+            // {
+            //   assert(in_priority >= 0);
+            //   in_priority += numeric_limits<int>::min();
+            // }
+
+            // On the input input side, a VC might request several output VCs.
+            // These VCs can be prioritized by the routing function, and this is
+            // reflected in "in_priority". On the output side, if multiple VCs are
+            // requesting the same output VC, the priority of VCs is based on the
+            // actual packet priorities, which is reflected in "out_priority".
+
+            if (!((dest_buf->AvailableFor(out_vc) - f->flits_num >= 0) && dest_buf->IsAvailableFor(out_vc)))
+            {
+
+                if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+                {
+                    int const use_input_and_vc = dest_buf->UsedBy(out_vc);
+                    int const use_input = use_input_and_vc / _vcs;
+                    int const use_vc = use_input_and_vc % _vcs;
+                    *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " << GetID()
+                        << " mcast VC " << out_vc
+                        << " at output " << x.first
+                        << " is in use by VC " << use_vc
+                        << " at input " << use_input;
+                    //Flit* cf = dest_buf[use_input]->FrontFlit(use_vc);
+                    //*gWatchOut << " state is " << _buf[use_input]->GetState(use_vc);
+                   // if (cf)
+                    //{
+                    //    *gWatchOut << " (front flit: " << cf->id << " mcast = " << cf->mflag << " head = " << cf->head << " tail = " << cf->tail << ")";
+                   // }
+                    //else
+                    //{
+                   //     *gWatchOut << " (empty)";
+                    //}
+                   // *gWatchOut << "." << endl;
+                }
+
+            }
+            else
+            {
+                elig = true;
+                if (_vc_busy_when_full && dest_buf->IsFullFor(out_vc))
+                {
+                    if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+                        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " << GetID()
                         << "  VC " << out_vc
-                        << " at output " << out_port
-                        << " is full. " <<"last pid = "<< dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
-          dest_buf->Display(*gWatchOut);
-          reserved |= !dest_buf->IsFull();
+                        << " at output " << x.first
+                        << " is full. " << "last pid = " << dest_buf->_last_pid[out_vc] << "last fid = " << dest_buf->_last_id[out_vc] << endl;
+                    dest_buf->Display(*gWatchOut);
+                    reserved |= !dest_buf->IsFull();
+                }
+                else
+                {
+                    // int const time = iter->first;
+                    // if (time >= 0)
+                    // {
+                    //   cout<<"time rid "<<GetID()<<endl;
+                    //   break;
+                    // }
+                    // iter->first = GetSimTime() + _vc_alloc_delay - 1;
+                    cred = true;
+
+                    if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+                    {
+                        *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " << GetID()
+                            << " mcast Requesting VC " << out_vc
+                            << " at output " << x.first
+                            << " (in_pri: " << in_priority
+                            << ", out_pri: " << out_priority
+                            << ")." << endl;
+                        watched = true;
+
+                    }
+                    vc_acquired += 1;
+                    empty_vc[x.first]=out_vc;
+                    break;
+                }
+            }
         }
-        else
-        {
-          // int const time = iter->first;
-          // if (time >= 0)
-          // {
-          //   cout<<"time rid "<<GetID()<<endl;
-          //   break;
-          // }
-          // iter->first = GetSimTime() + _vc_alloc_delay - 1;
-          cred = true;
-          if (f->watch || (_routers_to_watch.count(GetID()) > 0))
-          {
-            *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " <<GetID() 
-                        << " mcast Requesting VC " << out_vc
-                        << " at output " << out_port
-                        << " (in_pri: " << in_priority
-                        << ", out_pri: " << out_priority
-                        << ")." << endl;
-            watched = true;
+    }
+    if (vc_acquired == cur_buf->GetMcastTable(vc).size()) {
+        // iter->second.second.second = out_port * _vcs + out_vc;
+        for (auto& x : cur_buf->GetMcastTable(vc)) {
+            BufferState* const dest_buf = _next_buf[x.first];
+            assert(dest_buf->IsAvailableFor(empty_vc[x.first]));
+            Flit* cf = _buf[input]->FrontFlit(vc);
+            dest_buf->TakeBuffer(empty_vc[x.first], input * _vcs + vc);
 
-          }
-          // iter->second.second.second = out_port * _vcs + out_vc;
-
-          BufferState *const dest_buf = _next_buf[out_port];
-          assert(dest_buf->IsAvailableFor(out_vc));
-
-          dest_buf->TakeBuffer(out_vc, input * _vcs + vc);
-
-          cur_buf->PushMOutputandVC(vc,out_port * _vcs + out_vc);
-          break;
+            cur_buf->PushMOutputandVC(vc, x.first * _vcs + empty_vc[x.first]);
+            if (f->watch || (_routers_to_watch.count(GetID()) > 0))
+            {
+                *gWatchOut << GetSimTime() << " | " << FullName() << " | " << " rid = " << GetID()
+                    << " mcast Assigning VC " << empty_vc[x.first]
+                    << " at output " << x.first
+                    << " to VC " << vc
+                    << " at input " << input
+                    << "." << endl;
+                
+            }
+            iter->second.second.first = true;
+            cur_buf->SetMCastCount(vc, 0);
+        }
+    }
 
           // int const input_and_vc = _vc_shuffle_requests ? (vc * _inputs + input) : (input * _vcs + vc);
           // _vc_allocator->AddRequest(input_and_vc, out_port * _vcs + out_vc,
                                     // 0, in_priority, out_priority);
-        }
-      }
-    }
+      
     if (!elig)
     {
       iter->second.second.second = STALL_BUFFER_BUSY;
@@ -2988,18 +3012,19 @@ void IQRouter::_VCAllocEvaluateMulti()
   //   _vc_allocator->PrintGrants(gWatchOut);
   // }
 
-  for (deque<pair<int, pair<pair<int, int>, pair<int,int> > > >::iterator iter = _vc_alloc_vcs_multi.begin();
-       iter != _vc_alloc_vcs_multi.end();
-       ++iter)
+  for (deque<pair<int, pair<pair<int, int>, pair<bool, int> > > >::iterator iter = _vc_alloc_vcs_multi.begin();
+      iter != _vc_alloc_vcs_multi.end();
+      ++iter)
   {
 
-    int const time = iter->first;
-    if (time >= 0)
-    {
-      break;
-    }
-    iter->first = GetSimTime() + _vc_alloc_delay - 1;
-
+      int const time = iter->first;
+      if (time >= 0)
+      {
+          break;
+      }
+      iter->first = GetSimTime() + _vc_alloc_delay - 1;
+  }
+  /*
     int const input = iter->second.first.first;
     assert((input >= 0) && (input < _inputs));
     int const vc = iter->second.first.second;
@@ -3071,7 +3096,7 @@ void IQRouter::_VCAllocEvaluateMulti()
   if (_vc_alloc_delay <= 1)
   {
     return;
-  }
+  }*/
 
   // for (deque<pair<int, pair<pair<int, int>, pair<int, int> > > >::iterator iter = _vc_alloc_vcs_multi.begin();
   //      iter != _vc_alloc_vcs_multi.end();
@@ -3147,7 +3172,7 @@ void IQRouter::_VCAllocEvaluateMulti()
 void IQRouter::_VCAllocUpdateMulti()
 {
   assert(_vc_allocator);
-  set<int> finish_invc;
+  //set<int> finish_invc;
   while (!_vc_alloc_vcs_multi.empty())
   {
 
@@ -3188,11 +3213,10 @@ void IQRouter::_VCAllocUpdateMulti()
                  << ")." << endl;
     }
 
-    int const output_and_vc = item.second.second.second;
+    //int const output_and_vc = item.second.second.second;
 
-    if (output_and_vc >= 0)
-    {
-
+    if (item.second.second.first)
+    {/*
       int const match_output = output_and_vc / _vcs;
       assert((match_output >= 0) && (match_output < _outputs));
       int const match_vc = output_and_vc % _vcs;
@@ -3204,13 +3228,12 @@ void IQRouter::_VCAllocUpdateMulti()
                    << " mcast Acquiring assigned VC " << match_vc
                    << " at output " << match_output
                    << "." << endl;
-      }
+      }*/
 
-      BufferState *const dest_buf = _next_buf[match_output];
-      if(cur_buf->GetMulticastOutpair(vc).size() == cur_buf->GetMcastTable(vc).size())
-      {
+      //BufferState *const dest_buf = _next_buf[match_output];
+        assert(cur_buf->GetMulticastOutpair(vc).size() == cur_buf->GetMcastTable(vc).size());
             cur_buf->SetState(vc, VC::active);
-            if(finish_invc.count(item.second.first.first * _vcs + item.second.first.second)==0)
+//            if(finish_invc.count(item.second.first.first * _vcs + item.second.first.second)==0)
             for (int i = 0; i < cur_buf->GetMulticastOutpair(vc).size(); i++) {
                 _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first, cur_buf->GetMulticastOutpair(vc)[i]), -1)));
                 if (f->watch || (_routers_to_watch.count(GetID()) > 0))
@@ -3218,9 +3241,7 @@ void IQRouter::_VCAllocUpdateMulti()
                     *gWatchOut << " push into switch alloc vc_alloc " << f->id << " Switch allocation to do is " << _sw_alloc_vcs_multi.size() << endl;
                 }
             }
-            finish_invc.insert(item.second.first.first * _vcs + item.second.first.second);
-        }
-      
+ //           finish_invc.insert(item.second.first.first * _vcs + item.second.first.second);   
       if (!_speculative)
       {
 //          _sw_alloc_vcs_multi.push_back(make_pair(-1, make_pair(make_pair(item.second.first,output_and_vc), -1)));
@@ -3249,6 +3270,7 @@ void IQRouter::_VCAllocUpdateMulti()
       }
 #endif
       // cout<<"pushing again into vcalloc rid "<<GetID()<<endl;
+      assert(!item.second.second.first);
       _vc_alloc_vcs_multi.push_back(make_pair(-1, make_pair(item.second.first, make_pair(item.second.second.first,-1))));
 
     }

@@ -85,7 +85,7 @@ public:
   //MultiCast Structures
   deque<pair<int, pair<int, int> > > _route_vcs_multi;//pair<time,pair<input,vc>> 
   deque<pair<int, pair<pair<pair<int, int>, int >,int> > > _sw_alloc_vcs_multi;   //pair<time,pair<pair<pair<input,vc>,outputandvc,for switch>
-  deque<pair<int, pair<pair<int, int>, pair<int , int> > > > _vc_alloc_vcs_multi; //pair<time,pair<pair<input,vc>,pair<output,vc>> (each output port demand has an entry)
+  deque<pair<int, pair<pair<int, int>, pair<bool , int> > > > _vc_alloc_vcs_multi; //pair<time,pair<pair<input,vc>,pair<output,vc>> (each output port demand has an entry)
   deque<pair<int, pair<Flit *, pair<int, int> > > > _crossbar_flits_multi;
   
   deque<pair<int, pair<int, int> > > _route_vcs;                //pair<time,pair<input,vc>> 
