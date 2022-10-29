@@ -128,11 +128,12 @@ IQRouter::IQRouter(Configuration const &config, Module *parent,
   {
     ostringstream module_name;
     module_name << "next_vc_o" << j;
+    /*
     if(j == 5){
       // cout<<"Router number "<<GetID()<<endl;
       _next_buf[j] = new BufferState(config, this, module_name.str(),true);
     }
-    else
+    else*/
       _next_buf[j] = new BufferState(config, this, module_name.str(),false);
     module_name.str("");
   }
@@ -2448,6 +2449,7 @@ void IQRouter::_SWAllocUpdate()
 
       f->hops++;
       f->vc = match_vc;
+      /*
       if(cur_buf->GetOutputPort(vc) == 5) //5 is the port to hub
       {
         //Bransan Statistacks
@@ -2471,7 +2473,7 @@ void IQRouter::_SWAllocUpdate()
 
           cur_buf->SetInterDest(vc, -1);
         }
-      }
+      }*/
       if (!_routing_delay && f->head)
       {
         const FlitChannel *channel = _output_channels[output];
@@ -2849,7 +2851,7 @@ void IQRouter::_VCAllocEvaluateMulti()
     // {
 
     //int const out_port_number = iter->second.second.first;
-    assert((out_port >= 0) && (out_port < _outputs));
+    //assert((out_port >= 0) && (out_port < _outputs));
     int vc_acquired =0;
     map<int,int> empty_vc;
     for (auto& x : cur_buf->GetMcastTable(vc)) {
@@ -4156,6 +4158,7 @@ void IQRouter::_SWAllocUpdateMulti()
 
             f_dup->hops++;
             f_dup->vc = match_vc;
+            /*
             if (cur_buf->GetOutputPort(vc) == 5) //5 is the port to hub
             {
                 //Bransan Statistacks
@@ -4179,7 +4182,7 @@ void IQRouter::_SWAllocUpdateMulti()
 
                     cur_buf->SetInterDest(vc, -1);
                 }
-            }
+            }*/
             // if (!_routing_delay && f_dup->head)
             // {
             //   const FlitChannel *channel = _output_channels[output];

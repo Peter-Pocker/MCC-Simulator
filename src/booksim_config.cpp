@@ -82,8 +82,8 @@ BookSimConfig::BookSimConfig( )
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 2;
   _int_map["Core_num"] = 64;
-  _int_map["Core_x"] = 8;
-  _int_map["Core_y"] = 8;
+  _int_map["Core_x"] = 3;
+  _int_map["Core_y"] = 3;
   //AddStrField("Core_routers", "{1,2,3,6,7,8,11,12,13}");//these location has cores, some routers can be idle
   //AddStrField("Core_routers", "{1,4}");
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
@@ -104,8 +104,8 @@ BookSimConfig::BookSimConfig( )
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
-  _int_map["k"] = 10; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
-  _int_map["n"] = 2; //network dimension
+  _int_map["k"] = 3; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
+  _int_map["n"] = 3; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 0; // Bransan number of wireless routers
   AddStrField( "routing_function", "dor" );
@@ -130,8 +130,8 @@ BookSimConfig::BookSimConfig( )
 
   //==== Single-node options ===============================
 
-  _int_map["in_ports"]  = 5;
-  _int_map["out_ports"] = 5;
+  _int_map["in_ports"]  = 7;
+  _int_map["out_ports"] = 7;
 
   //========================================================
   // Router options
