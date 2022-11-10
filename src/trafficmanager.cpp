@@ -1487,7 +1487,17 @@ void TrafficManager::_GeneratePacket(int source, int stype,
 
 
 void TrafficManager::_Inject()
-{   
+{
+    vector<unordered_map<int,bool>> empty_router;
+    vector<bool> empty_result;
+    empty_router.resize(_ddrs);
+    empty_result.resize(_ddrs,true);
+    for (int i = 0; i < _nodes; ++i) {
+        for (auto& x : ddr_routers) {
+            empty_router[ddr_id[i]][i] = _partial_packets[i][0].empty();
+            empty_result[ddr_id[i]] = empty_result[ddr_id[i]]&&_partial_packets[i][0].empty();
+        }
+    }
 
     Flit::FlitType packet_type = Flit::ANY_TYPE;
     for (int i = 0; i < _nodes; ++i)
@@ -1502,7 +1512,7 @@ void TrafficManager::_Inject()
                       _core[i]->run(_time, _partial_packets[i][c].empty(),flits);
                  }
                  else if (ddr_id.count(i) > 0) {
-                      _ddr[ddr_id[i]]->run(_time, _partial_packets[i][c].empty() , flits);
+                      _ddr[ddr_id[i]]->run(_time, empty_router[ddr_id[i]], empty_result[ddr_id[i]], flits);
                  }
 
  //               int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;

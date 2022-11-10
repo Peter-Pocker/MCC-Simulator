@@ -58,7 +58,11 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	_num_flits = config.GetInt("packet_size")-1;
 	_flit_width = config.GetInt("flit_width");
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
+	_ddr_bw = config.GetInt("DDR_bw");
+	_grant = 1;
+	_time_cnt = 0;
 	assert(_ddr_id >= 0 && _ddr_id <= _ddr_num);
+	time_store = -1;
 	vector<int> temp = config.GetIntArray("watch_cores");
 	if (config.GetInt("watch_all_cores")) {
 		for (int i = 0; i < config.GetInt("k") * config.GetInt("k"); i++) {
@@ -105,18 +109,66 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 }  
 
 
-void DDR::run(int time, bool empty, list<Flit*>& _flits_sending) {
+void DDR::run(int time, unordered_map<int, bool>& empty_router,bool _empty, list<Flit*>& _flits_sending) {
 //	receive_message(f);
 	_time = time;
-	if (_time == 6895) {
-		int deb = 1;
+	bool temp_send = (!_packet_to_send.empty() || !_data_to_send.empty()) && _empty;
+	if (_time_cnt == 0 && !_fifo_data.empty() && temp_send ) {
+		_grant = rand() % 2;
 	}
+	else if (_time_cnt == 0 && !_fifo_data.empty() && !temp_send) {
+		_grant = 0;
+	}
+	else if (_time_cnt == 0 && _fifo_data.empty() && temp_send) {
+		_grant = 1;
+	}
+	else if(_time_cnt != 0){
+		_time_cnt -= 1;
+	}
+
+	if (!_fifo_data.empty() && _grant == 0) {
+		_grant = -1;
+		/*
+			if (_fifo_data.front().second > _ddr_bw) {
+				_fifo_data.front().second -= _ddr_bw;
+			}
+			else {*/
+
+		//int left = _ddr_bw - _fifo_data.front().second;
+		_time_cnt = ceil(double(_fifo_data.front().second )/ _ddr_bw);
+		int temp_id = _fifo_data.front().first;
+		_fifo_tid[temp_id] -= 1;
+		if (_fifo_tid[temp_id] == 0 && _end_set.count(temp_id) > 0) {
+			unordered_set<int> temp = _ifm_to_ofm[temp_id];
+			if (!_ifm_to_ofm[temp_id].empty()) {
+				for (auto& x : _ifm_to_ofm[temp_id]) {
+					_ofm_message[x].first.first[0] = _ofm_message[x].first.first[0] - 1;
+					//				assert(_ofm_message[x].first.first[0]);
+					if (_ofm_message[x].first.first[0] == 0 && _ofm_message[x].first.first[2] == 0) {
+
+						vector<int> temp(2);
+						temp[0] = x;
+						temp[1] = _ofm_message[x].first.first[1];
+						_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[x].first.second), _ofm_message[x].second));
+					}
+				}
+			}
+		}
+		_fifo_data.pop();
+	}
+
+		
+	
 	//_flits_sending = nullptr;
-	if (!_packet_to_send.empty() && empty)
+	if (!_packet_to_send.empty() && _grant==1)
 	{
+		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw);
 		_send_data(_flits_sending);
+		_grant = -1;
+		
 	}
-	else if (_packet_to_send.empty() && empty && !_data_to_send.empty()) {
+	else if (_packet_to_send.empty() && _grant == 1 && !_data_to_send.empty()) {
+		_grant = -1;
 		int times = _data_to_send.size();
 		for (int i = 0; i < times; i++) {
 
@@ -137,7 +189,9 @@ void DDR::run(int time, bool empty, list<Flit*>& _flits_sending) {
 				_data_to_send.pop_front();
 			}
 		}
+		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw);
 		_send_data(_flits_sending);
+		
 	}
 }
 
@@ -164,7 +218,21 @@ void DDR::receive_message(Flit*f) {
 //		if (_watch_ids.count(f->transfer_id) > 0) {
 //			cout << " this DDR is = " << _ddr_id << " receive transfer_id " << f->transfer_id << " receive flit " << f->id << " size is = " << f->size << "\n";
 //		}
+		_fifo_data.push(make_pair(f->transfer_id, f->size));
+		if (_fifo_tid.count(f->transfer_id) == 0) {
+			_fifo_tid[f->transfer_id] = 1;
+		}
+		else {
+			_fifo_tid[f->transfer_id]++;
+		}
+		if (f->end) {
+			_end_set.insert(f->transfer_id);
+			if (_watch_cores.count(f->src) > 0 || _watch_ids.count(f->transfer_id) > 0) {
+				cout << "this DDR is = " << _ddr_id << " receive end transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
+			}
+		}
 	}
+	/*
 	if (f->nn_type == 6 && f->end) {
 		if (_watch_cores.count(f->src) > 0 || _watch_ids.count(f->transfer_id) > 0) {
 			cout << "this DDR is = " << _ddr_id << " receive end transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
@@ -184,7 +252,7 @@ void DDR::receive_message(Flit*f) {
 				}
 			}
 		}
-	}
+	}*/
 
 }
 

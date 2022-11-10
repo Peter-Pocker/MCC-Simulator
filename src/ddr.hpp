@@ -50,7 +50,7 @@ using namespace std;
 class DDR {
 
 public:
-void run(int time,bool empty,list<Flit*>& _flits_sending);
+void run(int time,unordered_map<int,bool>& empty_router,bool empty,list<Flit*>& _flits_sending);
 
 
 void _send_data(list<Flit*>& _flits_sending);
@@ -74,7 +74,14 @@ private:
 	int _ddr_num;
 	int _core_num;
 	int _time;
-	int _buffered_data;
+	//for bw
+	queue<pair<int,int>> _fifo_data; //transfer_id,size
+	unordered_map<int, int> _fifo_tid;//record the numbe of packets of each transfer_id in fifo
+	set<int> _end_set;//record the end signal received
+	int time_store;
+	int _time_cnt;
+	int _ddr_bw;//bit
+	int _grant;
 
 	int _num_flits;//number of flits per packet at most;
 	int _flit_width;//line width, default 1g hz frequency.
