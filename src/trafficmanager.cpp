@@ -389,9 +389,59 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         _hub[i] = _net[i]->GetHubs();
     }
     json j;
+    switch (config.GetInt("network")) {
+    case 0:
+        net_name = "darknet19";
+        break;
+    case 1:
+        net_name = "vgg";
+        break;
+    case 2:
+        net_name = "resnet";
+        break;
+    case 3:
+        net_name = "goog";
+        break;
+    case 4:
+        net_name = "resnet101";
+        break;
+    case 5:
+        net_name = "densenet";
+        break;
+    case 6:
+        net_name = "ires";
+        break;
+    case 7:
+        net_name = "gnmt";
+        break;
+    case 8:
+        net_name = "lstm";
+        break;
+    case 9:
+        net_name = "zfnet";
+        break;
+    case 10:
+        net_name = "trans";
+        break;
+    case 11:
+        net_name = "trans_cell";
+        break;
+    case 12:
+        net_name = "pnas";
+        break;
+    default:
+        assert(false);
+        break;
+    }
+    dim_x = config.GetInt("Core_x");
+    dim_y = config.GetInt("Core_y");
+    batch = config.GetInt("batch");
+    route = "C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\";
+    string ifile = route + net_name + "_" + to_string(dim_x) + "x" + to_string(dim_y) + "_batch" + to_string(batch) + "\\IR.json";
+    std::ifstream(ifile) >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_3x3_batch8\\IR.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\goog_8x8_batch16\\IR.json") >> j;
-    std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\goog_3x3_batch8\\IR.json") >> j;
+    //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\0_3_64_4_2_nocbw_48_LP-SA.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_8x8_batch16\\IR.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_6x6_batch16\\IR.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_2c2w2d_1.json") >> j;
@@ -2466,6 +2516,9 @@ bool TrafficManager::Run()
                 stop = true;
                 for (auto& p : core_id) {
                     vector<int> temp = _core[p]->_check_end();
+                    if (temp[0]) {
+                        ojson[to_string(p)] = _core[p]->get_json()[to_string(p)];
+                    }
                     stop = stop && temp[0];
                     if (temp[1] > _wl_end_time) {
                         _wl_end_time = temp[1];
@@ -2518,7 +2571,12 @@ bool TrafficManager::Run()
         //the power script depend on it
         cout << "Workload taken " << _wl_end_time << " cycles" << endl;
         cout << "Time taken is " << _time << " cycles" << endl;
-        
+        ojson["attribute"]["end"] = _time;
+        ojson["attribute"]["core_num"] = dim_x * dim_y;
+        string ofile = route + net_name + "_" + to_string(dim_x) + "x" + to_string(dim_y) + "_batch" + to_string(batch) + "\\example.json";
+        std::ofstream file(ofile);
+        file << ojson;
+
         if (_stats_out)
         {
             WriteStats(*_stats_out);

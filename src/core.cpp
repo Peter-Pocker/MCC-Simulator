@@ -226,14 +226,17 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 
 
 	if (_wl_fn && _next_start && _dataready && _cur_rc_obuf!=-1&&!_wl_end) {
-		if (stoi(_core_id)==13){//_watch_cores.count(stoi(_core_id)) > 0) {
-			cout << "excute 13 here";
-		}
+		//if (stoi(_core_id)==13){//_watch_cores.count(stoi(_core_id)) > 0) {
+		//	cout << "excute 13 here";
+		//}
 		_next_start = false;
 		_running = true;
 		_wl_fn = false;
 		_dataready = false;
 		_start_wl_time = _time;
+		_j_example[_core_id][to_string(_cur_id)]["start"] = _time;
+		_j_example[_core_id][to_string(_cur_id)]["layer"] = _layer_name;
+		_j_example[_core_id][to_string(_cur_id)]["batch"] = _j[_core_id][_cur_id]["workload"][1][0].get<int>()- _j[_core_id][_cur_id]["workload"][0][0].get<int>() +1;
 		_start_tile_time = _time;
 		_end_tile_time = _start_tile_time + _tile_time.front(); //neglect non-integer part
 	}
@@ -257,6 +260,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 			if (_tile_time.empty()) {
 				assert(_tile_size.empty());
 				_wl_fn = true;
+				_j_example[_core_id][to_string(_cur_id)]["end"] = _time;
 				cnt1 = 0;
 				if (_watch_cores.count(stoi(_core_id))>0 ){
 					cout << "this core is = " << _core_id << " cur_id " << _cur_id << " cur_workload_id = "<<_cur_wl_id<< " is finished at " <<_time << " left_workload = "<<_wl_num-1-_cur_id<<"\n";
@@ -356,7 +360,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 void Core::receive_message(Flit*f) {
 	assert(f->tail);//For request, head is tail ; For data, after tail comes, update buffer.
 	if (f->nn_type == 5 ) {
-		if ((_watch_cores.count(stoi(_core_id)) > 0 || _watch_ids.count(f->transfer_id)>0)) {
+		if (_watch_cores.count(stoi(_core_id)) > 0 || _watch_ids.count(f->transfer_id)>0) {
 			cout << "this core is = " << _core_id << " receive requirement transfer_id " << f->transfer_id << " cur_workload_id = " << _cur_wl_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
 		}
 		if (_cur_wl_rq.count(f->transfer_id) == 0) {
@@ -575,9 +579,8 @@ void Core::_write_obuf() {
 			i = i - 1;
 		}
 	}
-	
-	
 }
+
 
 void Core::_send_data(list<Flit*>& _flits_sending) {
 	//if (o_buf[_cur_sd_obuf].empty()) {
@@ -751,8 +754,11 @@ void Core::_send_data(list<Flit*>& _flits_sending) {
 			}
 			
 		}
-		}
-
+		
+}
+nlohmann::json& Core::get_json() {
+	return _j_example;
+}
 
 	
 //}

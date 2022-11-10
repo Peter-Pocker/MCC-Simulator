@@ -53,6 +53,7 @@ void _send_data(list<Flit*>& _flits_sending);
 vector<int> &_check_end();
 //Flit* send_requirement();
 void receive_message(Flit*f);
+nlohmann::json& get_json();
 Core(const Configuration& config, int id,vector<int>ddr_id, const nlohmann::json& j);
 ~Core() {};
 private:
@@ -65,6 +66,7 @@ private:
   bool _generate_next_sd_obuf_id();
   void _write_obuf();
   nlohmann::json _j;
+  nlohmann::json _j_example;
   string _core_id;
   int _cur_wl_id; // id of current wl
   int _wl_num;//total workloads

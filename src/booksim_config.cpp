@@ -74,16 +74,18 @@ BookSimConfig::BookSimConfig( )
 
   // Physical sub-networks
   _int_map["subnets"] = 1;
-
-
+  
+  //name=("darknet19" "vgg" "resnet" "goog" "resnet101" "densenet" "ires" "gnmt" "lstm" "zfnet""trans""trans_cell""pnas")
+  _int_map["network"] = 6;
+  _int_map["batch"] = 8;
   //DDR configuration
   _int_map["DDR_lanes"] = 32;
   _int_map["DDR_fq"] = 16; //frequency / gbps
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 2;
-  _int_map["Core_num"] = 64;
-  _int_map["Core_x"] = 3;
-  _int_map["Core_y"] = 3;
+  _int_map["Core_num"] = 16;
+  _int_map["Core_x"] = 4;
+  _int_map["Core_y"] = 4;
   //AddStrField("Core_routers", "{1,2,3,6,7,8,11,12,13}");//these location has cores, some routers can be idle
   //AddStrField("Core_routers", "{1,4}");
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
@@ -98,14 +100,14 @@ BookSimConfig::BookSimConfig( )
 
   //Core configuration
   _int_map["num_obuf"] = 6;
-  _int_map["flit_width"] = 1024;
+  _int_map["flit_width"] = 64;
   _int_map["sending_granularity"] = 10;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 2;
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
-  _int_map["k"] = 3; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
-  _int_map["n"] = 3; //network dimension
+  _int_map["k"] = 6; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
+  _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 0; // Bransan number of wireless routers
   AddStrField( "routing_function", "dor" );
@@ -130,8 +132,8 @@ BookSimConfig::BookSimConfig( )
 
   //==== Single-node options ===============================
 
-  _int_map["in_ports"]  = 7;
-  _int_map["out_ports"] = 7;
+  _int_map["in_ports"]  = 5;
+  _int_map["out_ports"] = 5;
 
   //========================================================
   // Router options
@@ -163,8 +165,8 @@ BookSimConfig::BookSimConfig( )
   AddStrField("spec_sw_allocator", "prio");
   
   _int_map["received_queue_size"]  = 16; //Recieved queue size  
-  _int_map["num_vcs"]         = 1;  
-  _int_map["vc_buf_size"]     = 2;  //per vc buffer size
+  _int_map["num_vcs"]         = 16;  
+  _int_map["vc_buf_size"]     = 16;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
   AddStrField("buffer_policy", "private"); //buffer sharing policy
 
@@ -245,7 +247,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["injection_rate_uses_flits"] = 0;
 
   // number of flits per packet
-  _int_map["packet_size"] = 2;
+  _int_map["packet_size"] = 16;
   AddStrField("packet_size", ""); // workaraound to allow for vector specification
 
   // if multiple values are specified per class, set probabilities for each
@@ -355,11 +357,11 @@ BookSimConfig::BookSimConfig( )
   _int_map["watch_all_cores"] = 0;
   AddStrField("watch_file", "test");
   
-  AddStrField("watch_packets", "{225}");
+  AddStrField("watch_packets", "");
   AddStrField("watch_flits", "");
   AddStrField("watch_transfer_id", "");
   AddStrField("watch_routers", "");
-  AddStrField("watch_cores", "{1}");//1,2,3,6,7,8,11,12,
+  AddStrField("watch_cores", "{1,7}");//1,2,3,6,7,8,11,12,
   AddStrField("watch_ddrs", "");
   AddStrField("watch_transactions", "");
 

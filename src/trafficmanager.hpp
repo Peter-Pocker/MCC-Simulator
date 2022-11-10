@@ -69,6 +69,13 @@ protected:
   vector<int> ddr_routers;
   //Bransan added num of hubs
   int _nhubs;
+  nlohmann::json ojson;
+  string net_name;
+  string route;
+
+  int dim_x;
+  int dim_y;
+  int batch;
  
 
   vector<Network *> _net;
