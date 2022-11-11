@@ -77,12 +77,12 @@ BookSimConfig::BookSimConfig( )
   
   //name=("darknet19" "vgg" "resnet" "goog" "resnet101" "densenet" "ires" "gnmt" "lstm" "zfnet""trans""trans_cell""pnas")
   _int_map["network"] = 6;
-  _int_map["batch"] = 2;
+  _int_map["batch"] = 8;
   //DDR configuration
   _int_map["DDR_lanes"] = 32;
-  _int_map["DDR_bw"] = 20*32/2; //bit
+  _int_map["DDR_bw"] = 128; //bit
   _int_map["core_fq"] = 1; //frequency / gbps
-  _int_map["DDR_num"] = 2;
+  _int_map["DDR_num"] = 4;
   _int_map["Core_num"] = 16;
   _int_map["Core_x"] = 4;
   _int_map["Core_y"] = 4;
@@ -100,7 +100,7 @@ BookSimConfig::BookSimConfig( )
 
   //Core configuration
   _int_map["num_obuf"] = 6;
-  _int_map["flit_width"] = 64;
+  _int_map["flit_width"] = 32*8;
   _int_map["sending_granularity"] = 10;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 2;
 

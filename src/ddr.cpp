@@ -63,6 +63,7 @@ DDR::DDR(const Configuration& config, vector<int>& ddr_routers, int id, const nl
 	_grant_router = -1;
 	_ddr_routers = ddr_routers;
 	_grant = 1;
+	_time_minus = -1;
 	_grant_router = -1;
 	_time_cnt = 0;
 	assert(_ddr_id >= 0 && _ddr_id <= _ddr_num);
@@ -129,9 +130,10 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 		_grant = 1;
 		_grant_time = 1;
 	}
-	else if(_time_cnt != 0){
+	else if(_time_cnt != 0 && _time_minus!=_time){
 		_time_cnt -= 1;
 		_grant_time = 1;
+		_time_minus = _time;
 	}
 	if (_grant == 1 && _time_cnt==0 && _grant_time == 1) {
 		assert(empty_router.size() != 0);
