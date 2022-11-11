@@ -50,13 +50,13 @@ using namespace std;
 class DDR {
 
 public:
-void run(int time,unordered_map<int,bool>& empty_router,bool empty,list<Flit*>& _flits_sending);
+	void run(int time, vector<int>& empty_router, int router_id, bool empty, list<Flit*>& _flits_sending);
 
 
 void _send_data(list<Flit*>& _flits_sending);
 //Flit* send_requirement();
 void receive_message(Flit*f);
-DDR(const Configuration& config, int id, const nlohmann::json& j);
+DDR(const Configuration& config,vector<int>& ddr_routers, int id, const nlohmann::json& j);
 ~DDR() {};
 private:
 	unordered_set<int> _r_ts_list;//received transfer
@@ -82,6 +82,9 @@ private:
 	int _time_cnt;
 	int _ddr_bw;//bit
 	int _grant;
+	int _grant_router;
+	int _grant_time;
+	vector<int> _ddr_routers;
 
 	int _num_flits;//number of flits per packet at most;
 	int _flit_width;//line width, default 1g hz frequency.

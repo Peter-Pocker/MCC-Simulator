@@ -50,8 +50,9 @@ todo:
 #include "ddr.hpp"
 
 
-DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
-{  
+DDR::DDR(const Configuration& config, vector<int>& ddr_routers, int id, const nlohmann::json &j)
+{
+	_time = -1;
 	_ddr_num = config.GetInt("DDR_num");
 	_ddr_id = id;
 	_core_num = config.GetInt("Core_num");
@@ -59,7 +60,10 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 	_flit_width = config.GetInt("flit_width");
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
 	_ddr_bw = config.GetInt("DDR_bw");
+	_grant_router = -1;
+	_ddr_routers = ddr_routers;
 	_grant = 1;
+	_grant_router = -1;
 	_time_cnt = 0;
 	assert(_ddr_id >= 0 && _ddr_id <= _ddr_num);
 	time_store = -1;
@@ -109,24 +113,32 @@ DDR::DDR(const Configuration& config, int id, const nlohmann::json &j)
 }  
 
 
-void DDR::run(int time, unordered_map<int, bool>& empty_router,bool _empty, list<Flit*>& _flits_sending) {
+void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty, list<Flit*>& _flits_sending) {
 //	receive_message(f);
 	_time = time;
 	bool temp_send = (!_packet_to_send.empty() || !_data_to_send.empty()) && _empty;
 	if (_time_cnt == 0 && !_fifo_data.empty() && temp_send ) {
 		_grant = rand() % 2;
+		_grant_time = 1;
 	}
 	else if (_time_cnt == 0 && !_fifo_data.empty() && !temp_send) {
 		_grant = 0;
+		_grant_time = 1;
 	}
 	else if (_time_cnt == 0 && _fifo_data.empty() && temp_send) {
 		_grant = 1;
+		_grant_time = 1;
 	}
 	else if(_time_cnt != 0){
 		_time_cnt -= 1;
+		_grant_time = 1;
 	}
-
-	if (!_fifo_data.empty() && _grant == 0) {
+	if (_grant == 1 && _time_cnt==0 && _grant_time == 1) {
+		assert(empty_router.size() != 0);
+		_grant_router = empty_router[rand() % empty_router.size()];
+		_grant_time == -1;
+	}
+	if (!_fifo_data.empty() && _grant == 0 ) {
 		_grant = -1;
 		/*
 			if (_fifo_data.front().second > _ddr_bw) {
@@ -160,15 +172,17 @@ void DDR::run(int time, unordered_map<int, bool>& empty_router,bool _empty, list
 		
 	
 	//_flits_sending = nullptr;
-	if (!_packet_to_send.empty() && _grant==1)
+	if (!_packet_to_send.empty() && _grant_router==router_id )
 	{
 		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw);
 		_send_data(_flits_sending);
 		_grant = -1;
+		_grant_router = -1;
 		
 	}
 	else if (_packet_to_send.empty() && _grant == 1 && !_data_to_send.empty()) {
 		_grant = -1;
+		_grant_router = -1;
 		int times = _data_to_send.size();
 		for (int i = 0; i < times; i++) {
 
