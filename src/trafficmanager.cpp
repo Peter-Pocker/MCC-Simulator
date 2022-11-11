@@ -1522,7 +1522,7 @@ void TrafficManager::_Inject()
                       _core[i]->run(_time, _partial_packets[i][c].empty(),flits);
                  }
                  else if (ddr_id.count(i) > 0) {
-                      _ddr[ddr_id[i]]->run(_time, empty_router[ddr_id[i]],i, empty_result[ddr_id[i]], flits);
+                      _ddr[ddr_id[i]]->run(_time, empty_router[ddr_id[i]],i, empty_result[ddr_id[i]], _partial_packets[i][c].empty(), flits);
                  }
 
  //               int timer = _include_queuing == 1 ? _qtime[i][c] : _time < _drain_time;

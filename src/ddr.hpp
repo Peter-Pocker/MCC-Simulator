@@ -50,7 +50,7 @@ using namespace std;
 class DDR {
 
 public:
-	void run(int time, vector<int>& empty_router, int router_id, bool empty, list<Flit*>& _flits_sending);
+	void run(int time, vector<int>& empty_router, int router_id, bool empty,bool time_empty, list<Flit*>& _flits_sending);
 
 
 void _send_data(list<Flit*>& _flits_sending);

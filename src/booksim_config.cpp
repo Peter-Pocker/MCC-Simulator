@@ -80,7 +80,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["batch"] = 2;
   //DDR configuration
   _int_map["DDR_lanes"] = 32;
-  _int_map["DDR_bw"] = 8*8; //bit
+  _int_map["DDR_bw"] = 20*32/2; //bit
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 2;
   _int_map["Core_num"] = 16;
@@ -359,7 +359,7 @@ BookSimConfig::BookSimConfig( )
   
   AddStrField("watch_packets", "");
   AddStrField("watch_flits", "");
-  AddStrField("watch_transfer_id", "");
+  AddStrField("watch_transfer_id", "{65, 70, 66, 71, 67, 72, 68, 73 }");
   AddStrField("watch_routers", "");
   AddStrField("watch_cores", "");//1,2,3,6,7,8,11,12,
   AddStrField("watch_ddrs", "");

@@ -113,7 +113,7 @@ DDR::DDR(const Configuration& config, vector<int>& ddr_routers, int id, const nl
 }  
 
 
-void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty, list<Flit*>& _flits_sending) {
+void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bool time_emty, list<Flit*>& _flits_sending) {
 //	receive_message(f);
 	_time = time;
 	bool temp_send = (!_packet_to_send.empty() || !_data_to_send.empty()) && _empty;
@@ -149,9 +149,13 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty, l
 		//int left = _ddr_bw - _fifo_data.front().second;
 		_time_cnt = ceil(double(_fifo_data.front().second )/ _ddr_bw);
 		int temp_id = _fifo_data.front().first;
-		_fifo_tid[temp_id] -= 1;
+		_fifo_tid[temp_id] = _fifo_tid[temp_id]- 1;
+//		cout << "this DDR is = " << _ddr_id << " drain transfer_id = " << temp_id << "left = "<< _fifo_tid[temp_id]<<" time = " << _time << "\n";
 		if (_fifo_tid[temp_id] == 0 && _end_set.count(temp_id) > 0) {
-			unordered_set<int> temp = _ifm_to_ofm[temp_id];
+			//unordered_set<int> temp = _ifm_to_ofm[temp_id];
+			_end_set.erase(temp_id);
+			_fifo_tid.erase(temp_id);
+			cout << "this DDR is = " << _ddr_id << " drain all transfer_id = " << temp_id << " time = " << _time << "\n";
 			if (!_ifm_to_ofm[temp_id].empty()) {
 				for (auto& x : _ifm_to_ofm[temp_id]) {
 					_ofm_message[x].first.first[0] = _ofm_message[x].first.first[0] - 1;
@@ -175,14 +179,16 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty, l
 	if (!_packet_to_send.empty() && _grant_router==router_id )
 	{
 		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw);
+		assert(time_emty);
 		_send_data(_flits_sending);
 		_grant = -1;
 		_grant_router = -1;
 		
 	}
-	else if (_packet_to_send.empty() && _grant == 1 && !_data_to_send.empty()) {
+	else if (_packet_to_send.empty() && _grant_router == router_id && !_data_to_send.empty()) {
 		_grant = -1;
 		_grant_router = -1;
+		assert(time_emty);
 		int times = _data_to_send.size();
 		for (int i = 0; i < times; i++) {
 
@@ -232,6 +238,7 @@ void DDR::receive_message(Flit*f) {
 //		if (_watch_ids.count(f->transfer_id) > 0) {
 //			cout << " this DDR is = " << _ddr_id << " receive transfer_id " << f->transfer_id << " receive flit " << f->id << " size is = " << f->size << "\n";
 //		}
+//		cout << "this DDR is = " << _ddr_id << " receive transfer_id " << f->transfer_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
 		_fifo_data.push(make_pair(f->transfer_id, f->size));
 		if (_fifo_tid.count(f->transfer_id) == 0) {
 			_fifo_tid[f->transfer_id] = 1;
