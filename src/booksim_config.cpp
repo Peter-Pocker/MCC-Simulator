@@ -76,7 +76,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["subnets"] = 1;
   
   //name=("darknet19" "vgg" "resnet" "goog" "resnet101" "densenet" "ires" "gnmt" "lstm" "zfnet""trans""trans_cell""pnas")
-  _int_map["network"] = 6;
+  _int_map["network"] = 3;
   _int_map["batch"] = 8;
   //DDR configuration
   _int_map["DDR_lanes"] = 32;
@@ -100,7 +100,7 @@ BookSimConfig::BookSimConfig( )
 
   //Core configuration
   _int_map["num_obuf"] = 6;
-  _int_map["flit_width"] = 32*8;
+  _int_map["flit_width"] = 512;
   _int_map["sending_granularity"] = 10;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 2;
 
@@ -165,8 +165,8 @@ BookSimConfig::BookSimConfig( )
   AddStrField("spec_sw_allocator", "prio");
   
   _int_map["received_queue_size"]  = 16; //Recieved queue size  
-  _int_map["num_vcs"]         = 64;  
-  _int_map["vc_buf_size"]     = 16;  //per vc buffer size
+  _int_map["num_vcs"]         = 32;  
+  _int_map["vc_buf_size"]     = 17;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
   AddStrField("buffer_policy", "private"); //buffer sharing policy
 

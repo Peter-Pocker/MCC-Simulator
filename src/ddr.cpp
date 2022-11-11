@@ -132,7 +132,7 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 	}
 	else if(_time_cnt != 0 && _time_minus!=_time){
 		_time_cnt -= 1;
-		_grant_time = 1;
+//		_grant_time = 1;
 		_time_minus = _time;
 	}
 	if (_grant == 1 && _time_cnt==0 && _grant_time == 1) {
@@ -142,6 +142,7 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 	}
 	if (!_fifo_data.empty() && _grant == 0 ) {
 		_grant = -1;
+		_grant_time == -1;
 		/*
 			if (_fifo_data.front().second > _ddr_bw) {
 				_fifo_data.front().second -= _ddr_bw;
@@ -149,7 +150,7 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 			else {*/
 
 		//int left = _ddr_bw - _fifo_data.front().second;
-		_time_cnt = ceil(double(_fifo_data.front().second )/ _ddr_bw);
+		_time_cnt = ceil(double(_fifo_data.front().second )/ _ddr_bw)-1;
 		int temp_id = _fifo_data.front().first;
 		_fifo_tid[temp_id] = _fifo_tid[temp_id]- 1;
 //		cout << "this DDR is = " << _ddr_id << " drain transfer_id = " << temp_id << "left = "<< _fifo_tid[temp_id]<<" time = " << _time << "\n";
@@ -180,7 +181,7 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 	//_flits_sending = nullptr;
 	if (!_packet_to_send.empty() && _grant_router==router_id )
 	{
-		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw);
+		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw)-1;
 		assert(time_emty);
 		_send_data(_flits_sending);
 		_grant = -1;
@@ -211,7 +212,7 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 				_data_to_send.pop_front();
 			}
 		}
-		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw);
+		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw)-1;
 		_send_data(_flits_sending);
 		
 	}
