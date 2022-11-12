@@ -75,10 +75,10 @@ BookSimConfig::BookSimConfig( )
   //========================================================
   // Network options
   //========================================================
-	int mm, nn, xx, yy, ss, bb, dd, cc,me;
+	int mm, nn, xx, yy, ss, bb, dd, cc,tcc,me;
 
 	//ifstream in("params.in");
-	if (!(cin >> mm >> nn >> xx >> yy >> ss >> bb >> dd >> cc >> me)) {
+	if (!(cin >> mm >> nn >> xx >> yy >> ss >> bb >> dd >> cc >>tcc >> me)) {
 		cout << "Warning: No input file detected, use default settings:" << endl;
 		mm = 0; nn = 2; xx = 4; yy = 4; ss = 4; bb = 64; dd = 256; cc = 512;
 		cout << mm << ' ' << nn << ' ' << xx << ' ' << yy << ' ' << ss << ' ' << bb << ' ' << dd << ' ' << cc << endl;
@@ -122,7 +122,8 @@ BookSimConfig::BookSimConfig( )
 
   //Core configuration
   _int_map["num_obuf"] = 6;
-  _int_map["flit_width"] = cc*8;
+  _int_map["analytical_width"] = cc * 8;
+  _int_map["flit_width"] = tcc*8;
   _int_map["sending_granularity"] = 10;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 2;
 
@@ -375,7 +376,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["deadlock_warn_timeout"] = 10000;
 
   _int_map["viewer_trace"] = 0;
-  _int_map["watch_deadlock"] = 1;
+  _int_map["watch_deadlock"] = 0;
   _int_map["watch_all_cores"] = 1;
   AddStrField("watch_file", "test");
   

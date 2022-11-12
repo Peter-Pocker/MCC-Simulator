@@ -433,9 +433,11 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
         assert(false);
         break;
     }
+    //assert(false);
     dim_x = config.GetInt("Core_x");
     dim_y = config.GetInt("Core_y");
     batch = config.GetInt("batch");
+    analytical_flit = config.GetInt("analytical_width");
     //route = "/home/jingwei/stschedule/results/json/";
     route = "C://Users//JingweiCai//Desktop//";
     string tempnoc;
@@ -464,7 +466,8 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     else if(config.GetInt("method") == 2){
         tempmet = "SA-LS";
     }
-    route = route + to_string(config.GetInt("arch")) + "_" + to_string(config.GetInt("network")) + "_" + to_string(batch) + "_" + to_string(dim_x) + "_" + tempopt + "_" + tempnoc + "_" + to_string(config.GetInt("flit_width") / 8) + "_" + tempmet;
+    route = route + to_string(config.GetInt("arch")) + "_" + to_string(config.GetInt("network")) + "_" + to_string(batch) + "_" + 
+        to_string(dim_x) + "_" + tempopt + "_" + tempnoc + "_" + to_string(config.GetInt("analytical_width") / 8) + "_" + tempmet;
     string ifile = route  + ".json";
     //string ifile = route + "p.json";
     cout<<ifile;
@@ -475,28 +478,28 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_8x8_batch16\\IR.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\darknet19_6x6_batch16\\IR.json") >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\NoC_DSE\\testbench\\IR_exp_2c2w2d_1.json") >> j;
-    int x_temp = config.GetInt("Core_x");
-    int y_temp = config.GetInt("Core_y");
-    _cores = x_temp * y_temp;
+    //int x_temp = config.GetInt("Core_x");
+    //int y_temp = config.GetInt("Core_y");
+    _cores = dim_x * dim_y;
     _ddrs = config.GetInt("DDR_num");
     _core.resize(_nodes);
     _ddr.resize(_ddrs);
-    ddr_routers.resize(y_temp * 2);
+    ddr_routers.resize(dim_y * 2);
     for (int i = 0; i < _nodes; i++) {
         _core[i] = NULL;
     }
-    for (int i = 0; i < y_temp; i++) {
+    for (int i = 0; i < dim_y; i++) {
 
-        ddr_routers[i] = i * (x_temp + 2);
-        ddr_routers[i + y_temp] = i * (x_temp + 2) + x_temp + 1;
+        ddr_routers[i] = i * (dim_x + 2);
+        ddr_routers[i + dim_y] = i * (dim_x + 2) + dim_x + 1;
 
     }
-    for (int i = 0; i < y_temp; i++) {
-        for (int k = 0; k < x_temp + 2; k++) {
-            if (k != 0 && k != x_temp + 1) {
-                Core* temp = new Core(config, i * (x_temp+2) + k,ddr_routers, j);
-                _core[i * (x_temp + 2) + k] = temp;
-                core_id.insert(i * (x_temp + 2) + k);
+    for (int i = 0; i < dim_y; i++) {
+        for (int k = 0; k < dim_x + 2; k++) {
+            if (k != 0 && k != dim_x + 1) {
+                Core* temp = new Core(config, i * (dim_x+2) + k,ddr_routers, j);
+                _core[i * (dim_x + 2) + k] = temp;
+                core_id.insert(i * (dim_x + 2) + k);
 //                cout << i * (x_temp + 2) + k << "\n";
             }  
         }
@@ -1529,15 +1532,15 @@ void TrafficManager::_Inject()
     for (auto& m : empty_router) {
         m.reserve(ddr_routers.size() / _ddrs);
     }
-    empty_result.resize(_ddrs,true);
-    for (int i = 0; i < _nodes; ++i) {
-        for (auto& x : ddr_routers) {
+    empty_result.resize(_ddrs,false);
+ //   for (int i = 0; i < _nodes; ++i) {
+        for (auto& i : ddr_routers) {
             if (_partial_packets[i][0].empty()) {
                 empty_router[ddr_id[i]].push_back(i) ;
             }
-            empty_result[ddr_id[i]] = empty_result[ddr_id[i]]&&_partial_packets[i][0].empty();
+            empty_result[ddr_id[i]] = empty_result[ddr_id[i]]||_partial_packets[i][0].empty();
         }
-    }
+//    }
 
     Flit::FlitType packet_type = Flit::ANY_TYPE;
     for (int i = 0; i < _nodes; ++i)
@@ -2109,7 +2112,9 @@ void TrafficManager::_Step()
     }
 
     ++_time;
-//    cout << "time = " << _time <<"\n";
+    if (_time == 10000) {
+        cout << "time = " << _time << endl;
+    }
     assert(_time);
     if (gTrace)
     {
@@ -2625,7 +2630,7 @@ bool TrafficManager::Run()
         ojson["attribute"]["core_num"] = dim_x * dim_y;
 
 
-        string ofile =  route +"_" "paint.json";;
+        string ofile =  route + "_" + to_string(analytical_flit)+ "_paint.json";;
         std::ofstream file(ofile);
         file << ojson;
 

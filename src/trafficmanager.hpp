@@ -77,6 +77,8 @@ protected:
   int dim_x;
   int dim_y;
   int batch;
+  int analytical_flit;
+  int flit_width;
  
 
   vector<Network *> _net;

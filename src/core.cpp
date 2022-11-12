@@ -63,9 +63,14 @@ Core::Core(const Configuration& config, int id, vector<int> ddr_id, const nlohma
    _interleave = config.GetInt("interleave")==1 ? true : false;
    _ddr_num = config.GetInt("DDR_num");
    _ddr_id = ddr_id;
+   _wl_end = false;
+   _of_size = -1;
+   _time = -1;
+   _end_time = -1;
    _sd_gran = config.GetInt("sending_granularity");//How many times did it take to send the data to destination
    _sd_gran_lb= config.GetInt("sending_granularity_lowerbound");
     vector<int> temp = config.GetIntArray("watch_cores");
+	_overall_end = false;
 	if (config.GetInt("watch_all_cores")) {
 		for (int i = 0; i < config.GetInt("k") * config.GetInt("k"); i++) {
 			_watch_cores.insert(i);

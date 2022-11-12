@@ -3193,7 +3193,7 @@ void IQRouter::_VCAllocUpdateMulti()
     int const vc = item.second.first.second;
     assert((vc >= 0) && (vc < _vcs));
 
-    assert(item.second.second.second != -1);
+    //assert(item.second.second.second != -1);
 
     Buffer *const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));

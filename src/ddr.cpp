@@ -61,6 +61,7 @@ DDR::DDR(const Configuration& config, vector<int>& ddr_routers, int id, const nl
 	_interleave = config.GetInt("interleave") == 1 ? true : false;
 	_ddr_bw = config.GetInt("DDR_bw");
 	_grant_router = -1;
+	_grant_time = -1;
 	_ddr_routers = ddr_routers;
 	_grant = 1;
 	_time_minus = -1;
