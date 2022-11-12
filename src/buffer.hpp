@@ -35,7 +35,7 @@
 #include "outputset.hpp"
 #include "routefunc.hpp"
 #include "config_utils.hpp"
-#include "Module.hpp"
+#include "module.hpp"
 #include "routers/router.hpp"
 
 class Buffer : public Module {

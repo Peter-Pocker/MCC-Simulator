@@ -43,7 +43,7 @@
 #include "routefunc.hpp"
 #include "outputset.hpp"
 #include "injection.hpp"
-#include "Core.hpp"
+#include "core.hpp"
 #include "ddr.hpp"
 #include "json.hpp"
 
@@ -64,6 +64,7 @@ protected:
   int _cores;
   int _ddrs;
   int _vcs;
+  int nid;
   //added by Jingwei
   bool stop;
   vector<int> ddr_routers;

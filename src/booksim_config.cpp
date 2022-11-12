@@ -62,30 +62,52 @@
 
 #include "booksim.hpp"
 #include "booksim_config.hpp"
-
+#include <sstream>
+#include <cmath>
+#include <fstream>
+#include <limits>
+#include <cstdlib>
+#include <ctime>
+#include <time.h>
+#include <iostream> 
 BookSimConfig::BookSimConfig( )
 { 
   //========================================================
   // Network options
   //========================================================
+	int mm, nn, xx, yy, ss, bb, dd, cc,me;
 
-  // Channel length listing file
-  AddStrField( "channel_file", "" ) ;
+	//ifstream in("params.in");
+	if (!(cin >> mm >> nn >> xx >> yy >> ss >> bb >> dd >> cc >> me)) {
+		cout << "Warning: No input file detected, use default settings:" << endl;
+		mm = 0; nn = 2; xx = 4; yy = 4; ss = 4; bb = 64; dd = 256; cc = 512;
+		cout << mm << ' ' << nn << ' ' << xx << ' ' << yy << ' ' << ss << ' ' << bb << ' ' << dd << ' ' << cc << endl;
+	}
+	else {
+		//in.close();
+	}
+	// Channel length listing file
+	AddStrField("channel_file", "");
 
-  // Physical sub-networks
-  _int_map["subnets"] = 1;
-  
-  //name=("darknet19" "vgg" "resnet" "goog" "resnet101" "densenet" "ires" "gnmt" "lstm" "zfnet""trans""trans_cell""pnas")
-  _int_map["network"] = 3;
-  _int_map["batch"] = 8;
+	// Physical sub-networks
+	_int_map["subnets"] = 1;
+	//0 11 12 12 3 1 64 12 2
+	//name=("darknet19" "vgg" "resnet" "goog" "resnet152" "densenet" "ires" "gnmt" "lstm" "zfnet""trans""trans_cell""pnas")
+	_int_map["network"] = nn;
+	_int_map["batch"] = bb;
+	_int_map["method"] = me;
+
+	_int_map["arch"] = mm;
+	_int_map["stride"] = ss;
+
   //DDR configuration
   _int_map["DDR_lanes"] = 32;
-  _int_map["DDR_bw"] = 128; //bit
+  _int_map["DDR_bw"] = dd*8; //bit
   _int_map["core_fq"] = 1; //frequency / gbps
   _int_map["DDR_num"] = 4;
-  _int_map["Core_num"] = 16;
-  _int_map["Core_x"] = 4;
-  _int_map["Core_y"] = 4;
+  _int_map["Core_num"] = xx*yy;
+  _int_map["Core_x"] = xx;
+  _int_map["Core_y"] = yy;
   //AddStrField("Core_routers", "{1,2,3,6,7,8,11,12,13}");//these location has cores, some routers can be idle
   //AddStrField("Core_routers", "{1,4}");
   _int_map["interleave"] = 1; // 1 is interleave, other stands for non-interleave
@@ -94,19 +116,19 @@ BookSimConfig::BookSimConfig( )
   //AddStrField("DDR_routers", "{0, 5, 10, 4, 9, 14}");//grouped by ddr numbers. 
   //AddStrField("DDR_routers", "{0,3,2,5}");//grouped by ddr numbers. 
   //AddStrField("DDR_3", "57");
-  //AddStrField("DDR_4", "62");
+  //AddStrField("DDR_4", "62");0
 
   //todo DDR number,router for each DDR, DDR group(add this,number & ddr for this group)
 
   //Core configuration
   _int_map["num_obuf"] = 6;
-  _int_map["flit_width"] = 512;
+  _int_map["flit_width"] = cc*8;
   _int_map["sending_granularity"] = 10;//output sending granularity
   _int_map["sending_granularity_lowerbound"] = 2;
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
-  _int_map["k"] = 6; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
+  _int_map["k"] = xx+2; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 0; // Bransan number of wireless routers
@@ -359,7 +381,7 @@ BookSimConfig::BookSimConfig( )
   
   AddStrField("watch_packets", "");
   AddStrField("watch_flits", "");
-  AddStrField("watch_transfer_id", "{65, 70, 66, 71, 67, 72, 68, 73 }");
+  AddStrField("watch_transfer_id", "");
   AddStrField("watch_routers", "");
   AddStrField("watch_cores", "");//1,2,3,6,7,8,11,12,
   AddStrField("watch_ddrs", "");

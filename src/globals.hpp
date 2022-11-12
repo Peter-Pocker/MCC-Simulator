@@ -53,6 +53,8 @@ extern int wirelesscount;
 extern int non_mdnd_hops;
 extern int latest_mdnd_hop;
 
+extern int mm, nn, xx, yy, ss, bb, dd, cc;
+
 
 extern int gK;
 extern int gN;

@@ -340,7 +340,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 		if (_watch_cores.count(stoi(_core_id)) > 0) {
 			int here = 1;
 		}
-		assert(!o_buf[_cur_sd_obuf].first.empty(),"wrong empty");
+		assert(!o_buf[_cur_sd_obuf].first.empty());
 		_send_data(_flits_sending);
 		if (_wl_end) {
 			bool temp = true;
