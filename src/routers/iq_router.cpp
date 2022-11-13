@@ -4567,8 +4567,10 @@ Flit * IQRouter::_Generate_Duplicates(Flit *cf , int output , bool generate_dup)
 
 
   mcast_map[cf->pid][output].second++; //Update map with pid of next flit
-  if(!generate_dup)
-    f_dup->hops = cf->hops;
+  if (!generate_dup) {
+      f_dup->hops = cf->hops;
+      cf->Free();
+  }
   return f_dup;
 }
 
