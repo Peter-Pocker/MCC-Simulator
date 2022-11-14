@@ -46,6 +46,13 @@ todo:
 * 2.send data also need DDR process
 * 3.add DDR placement logic
 */
+#ifdef NDEBUG
+#undef NDEBUG
+#include <assert.h>
+#define NDEBUG
+#else
+#include <assert.h>
+#endif // #ifdef NDEBUG
 #include "booksim.hpp"
 #include "ddr.hpp"
 
@@ -63,7 +70,8 @@ DDR::DDR(const Configuration& config, vector<int>& ddr_routers, int id, const nl
 	_grant_router = -1;
 	_grant_time = -1;
 	_ddr_routers = ddr_routers;
-	_grant = 1;
+	_grant = -1;
+	_grant_timer = 0;
 	_time_minus = -1;
 	_grant_router = -1;
 	_time_cnt = 0;
@@ -119,28 +127,43 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 //	receive_message(f);
 	_time = time;
 	bool temp_send = (!_packet_to_send.empty() || !_data_to_send.empty()) && _empty;
-	if (_time_cnt == 0 && !_fifo_data.empty() && temp_send ) {
+	if (_time_cnt == 0 && !_fifo_data.empty() && temp_send && time!=_grant_timer) {
 		_grant = rand() % 2;
 		_grant_time = 1;
+		_grant_timer = _time;
+		if (_grant == 1 && _time_cnt == 0 && _grant_time == 1) {
+			if (empty_router.size() == 0) {
+				cout << "wrong" << endl;
+			}
+			assert(empty_router.size() != 0);
+			_grant_router = empty_router[rand() % empty_router.size()];
+			_grant_time == -1;
+		}
 	}
-	else if (_time_cnt == 0 && !_fifo_data.empty() && !temp_send) {
+	else if (_time_cnt == 0 && !_fifo_data.empty() && !temp_send && time != _grant_timer) {
 		_grant = 0;
 		_grant_time = 1;
+		_grant_timer = _time;
 	}
-	else if (_time_cnt == 0 && _fifo_data.empty() && temp_send) {
+	else if (_time_cnt == 0 && _fifo_data.empty() && temp_send && time != _grant_timer) {
 		_grant = 1;
 		_grant_time = 1;
+		_grant_timer = _time;
+		if (_grant == 1 && _time_cnt == 0 && _grant_time == 1) {
+			if (empty_router.size() == 0) {
+				cout << "wrong" << endl;
+			}
+			assert(empty_router.size() != 0);
+			_grant_router = empty_router[rand() % empty_router.size()];
+			_grant_time == -1;
+		}
 	}
-	else if(_time_cnt != 0 && _time_minus!=_time){
+	else if(_time_cnt != 0 && _time_minus!=_time && _time != _grant_timer){
 		_time_cnt -= 1;
 //		_grant_time = 1;
 		_time_minus = _time;
 	}
-	if (_grant == 1 && _time_cnt==0 && _grant_time == 1) {
-		assert(empty_router.size() != 0);
-		_grant_router = empty_router[rand() % empty_router.size()];
-		_grant_time == -1;
-	}
+	
 	if (!_fifo_data.empty() && _grant == 0 ) {
 		_grant = -1;
 		_grant_time == -1;
@@ -170,6 +193,7 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 						temp[0] = x;
 						temp[1] = _ofm_message[x].first.first[1];
 						_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[x].first.second), _ofm_message[x].second));
+						_ofm_message.erase(x);
 					}
 				}
 			}
@@ -178,11 +202,14 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 	}
 
 		
-	
+	assert(_grant_timer == _time);
 	//_flits_sending = nullptr;
 	if (!_packet_to_send.empty() && _grant_router==router_id )
 	{
 		_time_cnt = ceil(double(_packet_to_send.front().first.second.first[1]) / _ddr_bw)-1;
+		if (!time_emty) {
+			cout << "wrong" << endl;
+		}
 		assert(time_emty);
 		_send_data(_flits_sending);
 		_grant = -1;
@@ -192,6 +219,9 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 	else if (_packet_to_send.empty() && _grant_router == router_id && !_data_to_send.empty()) {
 		_grant = -1;
 		_grant_router = -1;
+		if (!time_emty) {
+			cout << "wrong" << endl;
+		}
 		assert(time_emty);
 		int times = _data_to_send.size();
 		for (int i = 0; i < times; i++) {
@@ -236,6 +266,7 @@ void DDR::receive_message(Flit*f) {
 			temp[0] = f->transfer_id;
 			temp[1] = _ofm_message[f->transfer_id].first.first[1];
 			_data_to_send.push_back(make_pair(make_pair(temp, _ofm_message[f->transfer_id].first.second), _ofm_message[f->transfer_id].second));//to do when an entry is empty, drain pending_data firstly
+			_ofm_message.erase(f->transfer_id);
 		}
 	}
 	if (f->nn_type == 6 ) {

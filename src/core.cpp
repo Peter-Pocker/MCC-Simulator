@@ -133,8 +133,8 @@ void Core::_update()
 				(_of_size - 1) / (_flit_width * _num_flits) + 1 : _sd_gran_lb;
 		}
 
-		_tile_time.assign(_sd_gran - 1, (_cp_time - 1) / _sd_gran + 1);
-		_tile_time.push_back(_cp_time - (_sd_gran - 1) * ((_cp_time - 1) / _sd_gran + 1));
+		_tile_time.assign(_sd_gran - 1, (_cp_time - 1) / _sd_gran);
+		_tile_time.push_back(_cp_time - (_sd_gran - 1) * ((_cp_time - 1) / _sd_gran));
 		int i = 0;
 		
 		for (auto& x : _j[_core_id][_cur_id]["ofmap"]) {
@@ -164,7 +164,7 @@ void Core::_update()
 				if (x["transfer_id"] == 20) {
 					int p = 1;
 				}
-				temp.first[1] = ceil(double(x["size"].get<int>()) / _sd_gran);
+				temp.first[1] = x["size"].get<int>() / _sd_gran;
 				temp1.first[1] = x["size"].get<int>() - temp.first[1] * (_sd_gran - 1);
 
 				temp2.assign(_sd_gran - 1, temp);
@@ -227,7 +227,9 @@ void Core::_update()
 void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 //	receive_message(f);
 	_time = time;
-	
+	if (_core_id == "1" && pending) {
+//		cout << "here"<<endl;
+	}
 
 
 	if (_wl_fn && _next_start && _dataready && _cur_rc_obuf!=-1&&!_wl_end) {
@@ -245,10 +247,14 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 		_start_tile_time = _time;
 		_end_tile_time = _start_tile_time + _tile_time.front(); //neglect non-integer part
 	}
-	if (_running && !_wl_end) {
-		if (_cur_sd_obuf == -1) {
-			_generate_next_sd_obuf_id();
-		}
+	if (pending || _cur_rc_obuf==-1) {
+		_generate_next_rc_obuf_id();
+	}
+	if (_cur_sd_obuf == -1) {
+		_generate_next_sd_obuf_id();
+	}
+	if (_running && !_wl_end ) {
+		
 		if (_time == _end_tile_time) {
 			if (_watch_cores.count(stoi(_core_id)) > 0) {
 				int here = 1;
@@ -267,7 +273,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 				_wl_fn = true;
 				_j_example[_core_id][to_string(_cur_id)]["end"] = _time;
 				cnt1 = 0;
-				if (_watch_cores.count(stoi(_core_id))>0 ){
+				if (_watch_cores.count(stoi(_core_id))>0 && _time==647059){
 					cout << "this core is = " << _core_id << " cur_id " << _cur_id << " cur_workload_id = "<<_cur_wl_id<< " is finished at " <<_time << " left_workload = "<<_wl_num-1-_cur_id<<"\n";
 				}
 			} else if (_cur_rc_obuf == -1 ) {
@@ -313,6 +319,9 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 				f->ctime = _time;
 				f->transfer_id = p;
 				_requirements_to_send.push_back(f);
+				if (_time == 647059) {
+					cout << "here";
+				}
 				if (_watch_cores.count(stoi(_core_id)) > 0 || _watch_ids.count(f->transfer_id)>0) {
 					cout << "this core is = " << _core_id << " send requirment transfer_id " << p << " mflag " << f->mflag << " inject time = " << f->ctime << "\n";
 				}

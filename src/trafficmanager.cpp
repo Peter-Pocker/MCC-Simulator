@@ -24,6 +24,13 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifdef NDEBUG
+#undef NDEBUG
+#include <assert.h>
+#define NDEBUG
+#else
+#include <assert.h>
+#endif // #ifdef NDEBUG
 
 #include <sstream>
 #include <cmath>
@@ -443,10 +450,10 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     string tempnoc;
     nid = config.GetInt("network");
     if (nid == 10 || nid == 11) {
-        tempnoc = "noctbw"  ;
+        tempnoc = "newtbw"  ;
     }
     else {
-        tempnoc = "nocbw";
+        tempnoc = "newbw";
     }
     string tempopt;
     if (dim_x==12) {
@@ -1046,9 +1053,9 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
             _pair_flat[f->cl][f->src * _nodes + dest]->AddSample(f->atime - f->itime);
         }
 
-
+        
         if(f->mflag && f->tail)
-        {
+        {/*
             int diff =  f->atime - f_orig_ctime[f->oid];
             int diff1 = f->atime - f_orig_itime[f->oid];
             // cout<<"fid "<<f->id<<" oid "<<f->oid<<" diff "<<diff<<endl;
@@ -1059,14 +1066,14 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
             if (diff1 > f_diff1[f->oid])//Count the time taken by the last FLIT to arrive
             {
                 f_diff1[f->oid] = diff1;
-            }
+            }*/
             int diff2 = f->atime - f->ctime;
             total_mcast_sum += diff2;
             total_mcast_dests ++;
             total_mcast_hops += (f->hops * f->flits_num);
         }
         if (!f->mflag && f->tail)
-        {
+        {/*
             int udiff = f->atime - f->ctime;
             int udiff1 = f->atime - f->itime;
             // cout<<"fid "<<f->id<<" oid "<<f->oid<<" diff "<<diff<<endl;
@@ -1077,7 +1084,7 @@ void TrafficManager::_RetireFlit(Flit *f, int dest)
             if (udiff1 > uf_diff1[f->id])//Count the time taken by the last FLIT to arrive
             {
                 uf_diff1[f->id] = udiff1;
-            }
+            }*/
             int udiff2 = f->atime - f->ctime;
             total_ucast_sum += udiff2;
             total_ucast_dests++;
@@ -1532,9 +1539,12 @@ void TrafficManager::_Inject()
     for (auto& m : empty_router) {
         m.reserve(ddr_routers.size() / _ddrs);
     }
+    if (_time == 28095) {
+        cout << "here";
+    }
     empty_result.resize(_ddrs,false);
  //   for (int i = 0; i < _nodes; ++i) {
-        for (auto& i : ddr_routers) {
+        for (auto i : ddr_routers) {
             if (_partial_packets[i][0].empty()) {
                 empty_router[ddr_id[i]].push_back(i) ;
             }
@@ -1625,6 +1635,7 @@ void TrafficManager::_Inject()
                         }
                         f->vc = -1;
                         if (f->tail) {
+                            /*
                             if (!mflag_temp) {
                                 uf_diff[f->id] = 0;
                                 uf_diff1[f->id] = 0;
@@ -1633,7 +1644,7 @@ void TrafficManager::_Inject()
                                 f_orig_ctime[f->id] = f->ctime;
                                 f_diff[f->id] = 0;
                                 f_diff1[f->id] = 0;
-                            }
+                            }*/
                         }
                        
                         // Potentially generate packets for any (input,class)
@@ -2112,7 +2123,7 @@ void TrafficManager::_Step()
     }
 
     ++_time;
-    if (_time == 10000) {
+    if (_time % 10000 ==0 ) {
         cout << "time = " << _time << endl;
     }
     assert(_time);
@@ -2569,7 +2580,7 @@ bool TrafficManager::Run()
 //            cout << _time << "\n";
             if (_time % 300 == 0) {
                 stop = true;
-                for (auto& p : core_id) {
+                for (auto p : core_id) {
                     vector<int> temp = _core[p]->_check_end();
                     if (temp[0]) {
                         ojson[to_string(p)] = _core[p]->get_json()[to_string(p)];

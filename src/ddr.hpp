@@ -84,6 +84,7 @@ private:
 	int _grant;
 	int _grant_router;
 	int _grant_time;
+	int _grant_timer;
 	int _time_minus;//each time once
 	vector<int> _ddr_routers;
 

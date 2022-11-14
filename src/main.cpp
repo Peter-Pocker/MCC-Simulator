@@ -305,7 +305,7 @@ int main(int argc, char** argv)
     std::cout << "Number of Multicast packets " << mcastcount  << endl;
     std::cout << "Number of Wired multicast packets " << wiredcount << endl;
     std::cout << "Number of wireless multicast packets " << wirelesscount << endl;
-
+    /*
     int count = 0;
     int sum = 0;
     float avg = 0;
@@ -433,7 +433,7 @@ int main(int argc, char** argv)
 
         std::cout << "Min multicast transaction latency (from inject time): ";
         std::cout << min1 << " (fid = " << minid1 << ")" << endl;
-    }
+    }*/
     /*
    std::cout<<"Average packet latency for multicast flits : ";
     if(total_mcast_dests > 0)
@@ -477,7 +477,7 @@ int main(int argc, char** argv)
     //     std::cout << "No mcast flits" << endl;
      // for unicast
       //}
-
+    /*
     if (ucount != 0)
     {
         uavg = ((float)usum) / ucount;
@@ -513,7 +513,7 @@ int main(int argc, char** argv)
 
         std::cout << "Min unicast transaction latency (from inject time): ";
         std::cout << umin1 << " (fid = " << uminid1 << ")" << endl;
-    }
+    }*/
 }
   //Please try fixing this in the future. This code is a hack and is wrong.
 //This is needed because for some reason when m=0, it generates one more

@@ -188,7 +188,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("spec_sw_allocator", "prio");
   
   _int_map["received_queue_size"]  = 16; //Recieved queue size  
-  _int_map["num_vcs"]         = 32;  
+  _int_map["num_vcs"]         = 8;  
   _int_map["vc_buf_size"]     = 17;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
   AddStrField("buffer_policy", "private"); //buffer sharing policy
@@ -378,7 +378,7 @@ BookSimConfig::BookSimConfig( )
   _int_map["viewer_trace"] = 0;
   _int_map["watch_deadlock"] = 0;
   _int_map["watch_all_cores"] = 1;
-  AddStrField("watch_file", "test");
+  AddStrField("watch_file", "");
   
   AddStrField("watch_packets", "");
   AddStrField("watch_flits", "");
@@ -388,7 +388,7 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_ddrs", "");
   AddStrField("watch_transactions", "");
 
-  AddStrField("watch_out", "test.txt");
+  AddStrField("watch_out", "");
 
   AddStrField("stats_out", "");
 
