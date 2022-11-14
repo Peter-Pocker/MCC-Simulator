@@ -445,6 +445,7 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     dim_y = config.GetInt("Core_y");
     batch = config.GetInt("batch");
     analytical_flit = config.GetInt("analytical_width");
+    flit_width = config.GetInt("flit_width");
     //route = "/home/jingwei/stschedule/results/json/";
     route = "C://Users//JingweiCai//Desktop//";
     string tempnoc;
@@ -2641,7 +2642,7 @@ bool TrafficManager::Run()
         ojson["attribute"]["core_num"] = dim_x * dim_y;
 
 
-        string ofile =  route + "_" + to_string(analytical_flit)+ "_paint.json";;
+        string ofile =  route + "_" + to_string(flit_width/8)+ "_paint.json";;
         std::ofstream file(ofile);
         file << ojson;
 

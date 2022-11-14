@@ -63,6 +63,7 @@ void Flit::Reset()
   type      = ANY_TYPE ;
   vc        = -1 ;
   cl        = -1 ;
+  layer_num = 0;
   head      = false ;
   tail      = false ;
   dropped   = false ; // Bransan added 

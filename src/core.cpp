@@ -151,7 +151,10 @@ void Core::_update()
 				else if (y["id"] != stoi(_core_id)) {
 					temp.second.insert(y["id"].get<int>());
 					temp1.second.insert(y["id"].get<int>());//
-					_cur_wl_rq[x["transfer_id"].get<int>()].insert(y["id"].get<int>());
+					if (_cur_wl_rq[x["transfer_id"].get<int>()].count(y["id"].get<int>()) == 0)
+						_cur_wl_rq[x["transfer_id"].get<int>()][y["id"].get<int>()] = 1;
+					else
+						_cur_wl_rq[x["transfer_id"].get<int>()][y["id"].get<int>()]++;
 				}
 			}
 			if (!temp.second.empty()) {
@@ -176,9 +179,15 @@ void Core::_update()
 		for (auto it = _cur_wl_rq.begin(); it != _cur_wl_rq.end();) {
 			if (_r_rq_list.count(it->first) != 0) {
 				for (auto it1 = it->second.begin(); it1 != it->second.end();) {
-					if (_r_rq_list[it->first].count(*it1) != 0) {
-						_r_rq_list[it->first].erase(*it1);	
-						_cur_wl_rq[it->first].erase(it1++);
+					if (_r_rq_list[it->first].count(it1->first) != 0) {
+						_r_rq_list[it->first][it1->first]--;
+						if (_r_rq_list[it->first][it1->first] == 0)
+							_r_rq_list[it->first].erase(it1->first);
+						_cur_wl_rq[it->first][it1->first]--;
+						if (_cur_wl_rq[it->first][it1->first] == 0) {
+							_cur_wl_rq[it->first].erase(it1++);
+						}
+
 					}
 					else {
 						++it1;
@@ -273,7 +282,7 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 				_wl_fn = true;
 				_j_example[_core_id][to_string(_cur_id)]["end"] = _time;
 				cnt1 = 0;
-				if (_watch_cores.count(stoi(_core_id))>0 && _time==647059){
+				if (_watch_cores.count(stoi(_core_id))>0 ){
 					cout << "this core is = " << _core_id << " cur_id " << _cur_id << " cur_workload_id = "<<_cur_wl_id<< " is finished at " <<_time << " left_workload = "<<_wl_num-1-_cur_id<<"\n";
 				}
 			} else if (_cur_rc_obuf == -1 ) {
@@ -304,26 +313,27 @@ void Core::run(int time, bool empty, list<Flit*>& _flits_sending) {
 			for (auto& p : _rq_to_sent) {
 				Flit* f = Flit::New();
 				f->nn_type = 5;
-				if (_s_rq_list[p].second[0] < 0 && _interleave) {
+				f->layer_num = p.second;
+				if (_s_rq_list[p.first].second[0] < 0 && _interleave) {
 					f->mflag = true;
 					f->flits_num = 1;
 					f->to_ddr = true;
 					f->mdest.first.reserve(_ddr_num);
 				}
 				else {
-					f->dest = _s_rq_list[p].second[0];
+					f->dest = _s_rq_list[p.first].second[0];
 				}
-				f->size = _s_rq_list[p].second[1];
+				f->size = _s_rq_list[p.first].second[1];
 				f->tail = true;
 				f->head = true;
 				f->ctime = _time;
-				f->transfer_id = p;
+				f->transfer_id = p.first;
 				_requirements_to_send.push_back(f);
 				if (_time == 647059) {
 					cout << "here";
 				}
 				if (_watch_cores.count(stoi(_core_id)) > 0 || _watch_ids.count(f->transfer_id)>0) {
-					cout << "this core is = " << _core_id << " send requirment transfer_id " << p << " mflag " << f->mflag << " inject time = " << f->ctime << "\n";
+					cout << "this core is = " << _core_id << " send requirment transfer_id " << p.first << " mflag " << f->mflag << " inject time = " << f->ctime << "\n";
 				}
 			}
 			_rq_to_sent.clear();
@@ -378,10 +388,15 @@ void Core::receive_message(Flit*f) {
 			cout << "this core is = " << _core_id << " receive requirement transfer_id " << f->transfer_id << " cur_workload_id = " << _cur_wl_id << " src= " << f->src << " inject time = " << f->ctime << "\n";
 		}
 		if (_cur_wl_rq.count(f->transfer_id) == 0) {
-			_r_rq_list[f->transfer_id].insert(f->src);
+			if (_r_rq_list[f->transfer_id].count(f->src) == 0)
+				_r_rq_list[f->transfer_id][f->src] = f->layer_num;
+			else
+				_r_rq_list[f->transfer_id][f->src]+=f->layer_num;
 		}
 		else {
-			_cur_wl_rq[f->transfer_id].erase(f->src);
+			_cur_wl_rq[f->transfer_id][f->src]-= f->layer_num;
+			if (_cur_wl_rq[f->transfer_id][f->src] == 0)
+				_cur_wl_rq[f->transfer_id].erase(f->src);
 			if (_cur_wl_rq[f->transfer_id].empty()) {
 				_cur_wl_rq.erase(f->transfer_id);
 			}
@@ -465,19 +480,26 @@ void Core::_buffer_update()
 							continue;
 						}
 					}
-					_s_rq_list[y["transfer_id"]].second.resize(3);
-					if (y["type"].get<string>().compare("DRAM") != 0) {
-						_s_rq_list[y["transfer_id"]].second[0] = y["id"].get<int>();
-						_s_rq_list[y["transfer_id"]].second[1] = y["size"].get<int>();
-						_s_rq_list[y["transfer_id"]].second[2] = 1;
-					}
-					else if (y["id"] != stoi(_core_id)) {
-						_s_rq_list[y["transfer_id"]].second[0] = -1;
-						_s_rq_list[y["transfer_id"]].second[1] = y["size"].get<int>();
-						_s_rq_list[y["transfer_id"]].second[2] = _interleave ? _ddr_num : 1;//to revise it into ddr group number
+					if (_s_rq_list.count(y["transfer_id"]) == 0) {
+						_s_rq_list[y["transfer_id"]].second.resize(3);
+
+						if (y["type"].get<string>().compare("DRAM") != 0) {
+							_s_rq_list[y["transfer_id"]].second[0] = y["id"].get<int>();
+							_s_rq_list[y["transfer_id"]].second[1] = y["size"].get<int>();
+						}
+						else if (y["id"] != stoi(_core_id)) {
+							_s_rq_list[y["transfer_id"]].second[0] = -1;
+							_s_rq_list[y["transfer_id"]].second[1] = y["size"].get<int>();
+							_s_rq_list[y["transfer_id"]].second[2] = _interleave ? _ddr_num : 1;//to revise it into ddr group number
+						}
 					}
 					_s_rq_list[y["transfer_id"]].first.insert(x["layer"]);
-					_rq_to_sent.insert(y["transfer_id"].get<int>());
+					if (_rq_to_sent.count(y["transfer_id"].get<int>()) == 0) {
+						_rq_to_sent[y["transfer_id"].get<int>()]=1;
+					}
+					else {
+						_rq_to_sent[y["transfer_id"].get<int>()]++;
+					}
 				}
 			}
 		}

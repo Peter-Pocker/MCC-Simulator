@@ -60,7 +60,7 @@ public:
   int nn_type;//5 is request, 6 is data
 
   int cl;
-
+  int layer_num;
   bool head;
   bool tail;
   
