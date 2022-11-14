@@ -202,7 +202,7 @@ void DDR::run(int time, vector<int>& empty_router, int router_id, bool _empty,bo
 	}
 
 		
-	assert(_grant_timer == _time);
+	//assert(_grant_timer == _time);
 	//_flits_sending = nullptr;
 	if (!_packet_to_send.empty() && _grant_router==router_id )
 	{

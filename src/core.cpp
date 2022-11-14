@@ -24,6 +24,13 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifdef NDEBUG
+#undef NDEBUG
+#include <assert.h>
+#define NDEBUG
+#else
+#include <assert.h>
+#endif // #ifdef NDEBUG
 
 /*flit.cpp
  *
@@ -486,6 +493,7 @@ void Core::_buffer_update()
 						if (y["type"].get<string>().compare("DRAM") != 0) {
 							_s_rq_list[y["transfer_id"]].second[0] = y["id"].get<int>();
 							_s_rq_list[y["transfer_id"]].second[1] = y["size"].get<int>();
+							_s_rq_list[y["transfer_id"]].second[2] = 1;
 						}
 						else if (y["id"] != stoi(_core_id)) {
 							_s_rq_list[y["transfer_id"]].second[0] = -1;
