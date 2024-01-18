@@ -121,7 +121,7 @@ BookSimConfig::BookSimConfig( )
   //todo DDR number,router for each DDR, DDR group(add this,number & ddr for this group)
 
   //Core configuration
-  _int_map["num_obuf"] = 6;
+  _int_map["num_obuf"] = 20;
   _int_map["analytical_width"] = cc * 8;
   _int_map["flit_width"] = tcc*8;
   _int_map["sending_granularity"] = 10;//output sending granularity
@@ -129,7 +129,7 @@ BookSimConfig::BookSimConfig( )
 
   //==== Topology options =======================
   AddStrField( "topology", "mesh" );
-  _int_map["k"] = xx+2; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
+  _int_map["k"] = 6; //network radix. Although the network must be a square, we can deploy a rectangle mesh by not allocating cores on some routers
   _int_map["n"] = 2; //network dimension
   _int_map["c"] = 1; //concentration
   _int_map["m"] = 0; // Bransan number of wireless routers
@@ -188,8 +188,8 @@ BookSimConfig::BookSimConfig( )
   AddStrField("spec_sw_allocator", "prio");
   
   _int_map["received_queue_size"]  = 16; //Recieved queue size  
-  _int_map["num_vcs"]         = 8;  
-  _int_map["vc_buf_size"]     = 17;  //per vc buffer size
+  _int_map["num_vcs"]         = 24;  
+  _int_map["vc_buf_size"]     = 34;  //per vc buffer size
   _int_map["buf_size"]        = -1; //shared buffer size
   AddStrField("buffer_policy", "private"); //buffer sharing policy
 

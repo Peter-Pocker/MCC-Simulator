@@ -99,6 +99,7 @@ DDR::DDR(const Configuration& config, vector<int>& ddr_routers, int id, const nl
 			}
 	}
 	for (auto& x : j[to_string(-1)]["out"]) {
+		cout << x["transfer_id"] << "\n";
 		_ofm_message[x["transfer_id"]].first.first.resize(3);
 		_ofm_message[x["transfer_id"]].first.first[0] = x["related_ifmap"].size();
 		if (_ddr_id != _ddr_num) {

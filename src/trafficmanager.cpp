@@ -444,10 +444,12 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
     dim_x = config.GetInt("Core_x");
     dim_y = config.GetInt("Core_y");
     batch = config.GetInt("batch");
+    ddr_bw = config.GetInt("DDR_bw");
     analytical_flit = config.GetInt("analytical_width");
     flit_width = config.GetInt("flit_width");
     //route = "/home/jingwei/stschedule/results/json/";
-    route = "C://Users//JingweiCai//Desktop//";
+    route = "C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\json\\";
+    //route = "C://Users//JingweiCai//Desktop//";
     string tempnoc;
     nid = config.GetInt("network");
     if (nid == 10 || nid == 11) {
@@ -467,17 +469,20 @@ TrafficManager::TrafficManager(const Configuration &config, const vector<Network
 }
     string tempmet;
     if (config.GetInt("method")==0) {
-        tempmet = "LP-SA";
+        tempmet = "LP";
     }
     else if (config.GetInt("method") == 1)
         tempmet = "LS-opt-SA";
     else if(config.GetInt("method") == 2){
-        tempmet = "SA-LS";
+        tempmet = "SA";
     }
-    route = route + to_string(config.GetInt("arch")) + "_" + to_string(config.GetInt("network")) + "_" + to_string(batch) + "_" + 
-        to_string(dim_x) + "_" + tempopt + "_" + tempnoc + "_" + to_string(config.GetInt("analytical_width") / 8) + "_" + tempmet;
-    string ifile = route  + ".json";
+    //route = route + to_string(config.GetInt("arch")) + "_" + to_string(config.GetInt("network")) + "_" + to_string(batch) + "_" + 
+     //   to_string(dim_x) + "_" + tempopt + "_" + tempnoc + "_" + to_string(config.GetInt("analytical_width") / 8) + "_" + tempmet;
+    //string ifile = route  + ".json";
     //string ifile = route + "p.json";
+    //route = route + net_name + "_" + to_string(dim_x) + "x" + to_string(dim_y) + "_batch" + to_string(batch);
+    route = route+"\\IR_" + tempmet;
+    string ifile = route  + ".json";
     cout<<ifile;
     std::ifstream(ifile) >> j;
     //std::ifstream("C:\\Users\\JingweiCai\\Desktop\\stschedule\\stschedule\\stschedule\\results\\resnet_3x3_batch8\\IR.json") >> j;
@@ -2642,7 +2647,7 @@ bool TrafficManager::Run()
         ojson["attribute"]["core_num"] = dim_x * dim_y;
 
 
-        string ofile =  route + "_" + to_string(flit_width/8)+ "_paint.json";;
+        string ofile =  route +  "_paint.json";
         std::ofstream file(ofile);
         file << ojson;
 

@@ -82,7 +82,6 @@ Core::Core(const Configuration& config, int id, vector<int> ddr_id, const nlohma
 		for (int i = 0; i < config.GetInt("k") * config.GetInt("k"); i++) {
 			_watch_cores.insert(i);
 		}
-
 	}
 	else {
 		for (auto x : temp) {

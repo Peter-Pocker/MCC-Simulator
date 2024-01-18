@@ -79,6 +79,7 @@ protected:
   int batch;
   int analytical_flit;
   int flit_width;
+  int ddr_bw;
  
 
   vector<Network *> _net;
